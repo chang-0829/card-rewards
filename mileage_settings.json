@@ -404,6 +404,14 @@
       "startDate": "",
       "endDate": "",
       "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "b739a5c7-302b-4dca-81d1-6d04841b25c0",
+      "keyword": "ＦＰ－",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "2025-12-09",
+      "note": "哩程加速器 - 生活類；2026/01/01起自哩程加速器移除。"
     }
   ],
   "evaExcludeRules": [
@@ -542,6 +550,14 @@
       "startDate": "",
       "endDate": "",
       "note": ""
+    },
+    {
+      "id": "ab5dc228-451c-4fee-85f0-83f23b0c69f2",
+      "keyword": "電子化繳費稅",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
     }
   ],
   "amExcludeRules": [
@@ -676,6 +692,14 @@
     {
       "id": "19041a6d-cb5f-474f-bdd2-1c0b7943a921",
       "keyword": "年費",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    },
+    {
+      "id": "ff9b1034-34b5-4ce5-a7ff-ced72fe1c4cb",
+      "keyword": "電子化繳費稅",
       "location": "ALL",
       "startDate": "",
       "endDate": "",
