@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>信用卡哩程回饋財報中心 V12</title>
+    <title>信用卡哩程回饋財報中心 V12.1</title>
     <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -153,37 +153,36 @@
                             ))}
                         </div>
                     </div>
-                </div>
-            );
-        }
+                );
+            }
 
-        function InfoTooltip({ rule, theme }) {
-            if (!rule) return null;
-            const iconColor = theme === 'rose' ? 'text-rose-500' : theme === 'emerald' ? 'text-emerald-500' : theme === 'teal' ? 'text-teal-500' : 'text-blue-500';
-            let titleText = '';
-            let titleIcon = '';
-            if (theme === 'rose') { titleText = '觸發排除規則'; titleIcon = 'fa-solid fa-ban text-rose-500'; }
-            else if (theme === 'blue') { titleText = '強制一般消費'; titleIcon = 'fa-solid fa-check text-blue-500'; }
-            else { titleText = '觸發加碼規則'; titleIcon = 'fa-solid fa-star text-emerald-500'; }
-            
-            return (
-                <div className="relative flex items-center group/tooltip ml-1 z-10 cursor-help">
-                    <div className={`p-0.5 ${iconColor}`}><i className="fa-solid fa-circle-info"></i></div>
-                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-56 p-3 bg-white text-slate-700 text-[12px] rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-slate-200 font-normal leading-relaxed text-left">
-                        <div className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
-                            <i className={titleIcon}></i> <span>{titleText}</span>
+            function InfoTooltip({ rule, theme }) {
+                if (!rule) return null;
+                const iconColor = theme === 'rose' ? 'text-rose-500' : theme === 'emerald' ? 'text-emerald-500' : theme === 'teal' ? 'text-teal-500' : 'text-blue-500';
+                let titleText = '';
+                let titleIcon = '';
+                if (theme === 'rose') { titleText = '觸發排除規則'; titleIcon = 'fa-solid fa-ban text-rose-500'; }
+                else if (theme === 'blue') { titleText = '強制一般消費'; titleIcon = 'fa-solid fa-check text-blue-500'; }
+                else { titleText = '觸發加碼規則'; titleIcon = 'fa-solid fa-star text-emerald-500'; }
+                
+                return (
+                    <div className="relative flex items-center group/tooltip ml-1 z-10 cursor-help">
+                        <div className={`p-0.5 ${iconColor}`}><i className="fa-solid fa-circle-info"></i></div>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-56 p-3 bg-white text-slate-700 text-[12px] rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-slate-200 font-normal leading-relaxed text-left">
+                            <div className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
+                                <i className={titleIcon}></i> <span>{titleText}</span>
+                            </div>
+                            <div className="grid grid-cols-[50px_1fr] gap-1">
+                                <span className="text-slate-400">關鍵字</span><span className="font-bold text-slate-700">{rule.keyword}</span>
+                                {rule.startDate && <React.Fragment><span className="text-slate-400">開始日</span><span>{rule.startDate.split('-').join('/')}</span></React.Fragment>}
+                                {rule.endDate && <React.Fragment><span className="text-slate-400">結束日</span><span>{rule.endDate.split('-').join('/')}</span></React.Fragment>}
+                            </div>
+                            {rule.note && <div className="mt-2 text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">{rule.note}</div>}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white"></div>
                         </div>
-                        <div className="grid grid-cols-[50px_1fr] gap-1">
-                            <span className="text-slate-400">關鍵字</span><span className="font-bold text-slate-700">{rule.keyword}</span>
-                            {rule.startDate && <React.Fragment><span className="text-slate-400">開始日</span><span>{rule.startDate.split('-').join('/')}</span></React.Fragment>}
-                            {rule.endDate && <React.Fragment><span className="text-slate-400">結束日</span><span>{rule.endDate.split('-').join('/')}</span></React.Fragment>}
-                        </div>
-                        {rule.note && <div className="mt-2 text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">{rule.note}</div>}
-                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white"></div>
                     </div>
-                </div>
-            );
-        }
+                );
+            }
 
         // --- 主應用程式 ---
         function App() {
@@ -202,7 +201,7 @@
             
             const [settings, setSettings] = useState(() => {
                 try {
-                    const saved = localStorage.getItem('mileageSettingsV12_cache');
+                    const saved = localStorage.getItem('mileageSettingsV12.1_cache');
                     if (saved) {
                         const parsed = JSON.parse(saved);
                         return {
@@ -223,7 +222,7 @@
             // 啟動時向 Github 請求預設 Json
             useEffect(() => {
                 const fetchDefaultSettings = async () => {
-                    const cached = localStorage.getItem('mileageSettingsV12_cache');
+                    const cached = localStorage.getItem('mileageSettingsV12.1_cache');
                     if (!cached) {
                         try {
                             const res = await fetch('./mileage_settings.json');
@@ -240,7 +239,7 @@
                                     amBaseRules: parseLegacyKeywords(imported.amBaseRules, DEFAULT_SETTINGS.amBaseRules),
                                 };
                                 setSettings(merged);
-                                localStorage.setItem('mileageSettingsV12_cache', JSON.stringify(merged));
+                                localStorage.setItem('mileageSettingsV12.1_cache', JSON.stringify(merged));
                             }
                         } catch (e) {
                             console.log('No default settings found. Using default memory config.');
@@ -251,7 +250,7 @@
             }, []);
 
             useEffect(() => {
-                localStorage.setItem('mileageSettingsV12_cache', JSON.stringify(settings));
+                localStorage.setItem('mileageSettingsV12.1_cache', JSON.stringify(settings));
             }, [settings]);
 
             const handleSettingChange = (e) => {
@@ -987,8 +986,8 @@
                                                         >
                                                             <td className="py-3 px-8 font-bold text-slate-800 text-[13px] bg-white border-r border-slate-100">
                                                                 <div className="flex items-center gap-3">
-                                                                    <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}></i>
-                                                                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap"><i className="fa-regular fa-calendar-check mr-1"></i> 起息結算日</span> {formatChineseDate(day)}
+                                                                    <IconChevron isCollapsed={isCollapsed} />
+                                                                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap"><i className="fa-regular fa-calendar-check mr-1"></i> 起息結算日</span> {day}
                                                                 </div>
                                                             </td>
                                                             <td className="py-3 px-4 text-slate-500 text-[12px] font-medium flex items-center gap-3">
@@ -1010,7 +1009,7 @@
                                                         {!isCollapsed && filteredTxs.sort((a,b) => new Date(a.txDate) - new Date(b.txDate)).map((tx, idx) => (
                                                             <tr key={idx} className={`bg-white table-row-hover text-[12px] border-b border-slate-50 last:border-0 ${tx.isExclude ? 'opacity-40' : ''}`}>
                                                                 <td className="py-3 px-8 whitespace-nowrap text-slate-500 pl-14">
-                                                                    <span className="text-[10px] text-slate-400 mr-1">消費日</span> {formatChineseDate(tx.txDate)}
+                                                                    <span className="text-[10px] text-slate-400 mr-1">消費日</span> {tx.txDate}
                                                                 </td>
                                                                 <td className="py-3 px-4 text-slate-700">
                                                                     <div className="flex items-center gap-2 relative">
@@ -1039,6 +1038,13 @@
                                                                                 <React.Fragment>
                                                                                     <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border ${isEVA ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-teal-600 bg-teal-50 border-teal-100'}`}>加碼</span>
                                                                                     {tx.matchedBonus && <InfoTooltip rule={tx.matchedBonus} theme={isEVA ? 'emerald' : 'teal'} />}
+                                                                                </React.Fragment>
+                                                                            )}
+                                                                            {/* 長榮海外加碼標記 */}
+                                                                            {tx.isBonus && tx.isOverseas && !tx.isExclude && isEVA && (
+                                                                                <React.Fragment>
+                                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border text-emerald-600 bg-emerald-50 border-emerald-100`}>加碼</span>
+                                                                                    <InfoTooltip rule={tx.matchedBonus} theme="emerald" />
                                                                                 </React.Fragment>
                                                                             )}
                                                                         </div>
