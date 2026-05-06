@@ -674,6 +674,19 @@
       "note": ""
     }
   ],
+  "evaBaseRules": [
+    {
+      "id": "a6e6ed71-03fc-4de9-ba55-97639562cd4f",
+      "keyword": "連支＊萊爾富",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    }
+  ],
+  "amBaseRules": [],
+  "evaOverseasPhysical": [],
+  "evaOverseasOnline": [],
   "evaBaseRate": 22,
   "evaOverseasRate": 15,
   "evaBonusRate": 10,
