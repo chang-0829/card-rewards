@@ -146,10 +146,6 @@
                 fetchDefaultSettings();
             }, []);
 
-            useEffect(() => {
-                localStorage.setItem('mileageSettingsV12_cache', JSON.stringify(settings));
-            }, [settings]);
-
             const handleSettingChange = (e) => {
                 const { name, value } = e.target;
                 setSettings(prev => ({ ...prev, [name]: name.includes('Rate') || name.includes('Cap') || name === 'billingDay' ? Number(value) : value }));
@@ -511,11 +507,29 @@
                 const physicals = Array.from(selectedPhysical);
                 const onlines = unknownOverseasTxs.filter(tx => !selectedPhysical.has(tx));
                 
-                setSettings(prev => ({
-                    ...prev,
-                    evaOverseasPhysical: [...new Set([...(prev.evaOverseasPhysical || []), ...physicals])],
-                    evaOverseasOnline: [...new Set([...(prev.evaOverseasOnline || []), ...onlines])]
-                }));
+                setSettings(prev => {
+                    const newBonusRules = [...prev.evaBonusRules];
+                    physicals.forEach(desc => {
+                        if (!newBonusRules.some(r => r.keyword === desc)) {
+                            // 海外實體：寫入加碼名單，並設定地區為 OVERSEAS
+                            newBonusRules.push({ id: crypto.randomUUID(), keyword: desc, location: 'OVERSEAS', startDate: '', endDate: '', note: '自動加入: 海外實體' });
+                        }
+                    });
+            
+                    const newBaseRules = [...prev.evaBaseRules];
+                    onlines.forEach(desc => {
+                        if (!newBaseRules.some(r => r.keyword === desc)) {
+                            // 海外線上：寫入強制一般消費，避免下次重複詢問
+                            newBaseRules.push({ id: crypto.randomUUID(), keyword: desc, location: 'OVERSEAS', startDate: '', endDate: '', note: '自動加入: 海外線上' });
+                        }
+                    });
+            
+                    return {
+                        ...prev,
+                        evaBonusRules: newBonusRules,
+                        evaBaseRules: newBaseRules
+                    };
+                });
                 
                 setUnknownOverseasTxs([]); 
                 setSelectedPhysical(new Set());
