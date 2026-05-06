@@ -1,0 +1,683 @@
+{
+  "billingDay": 17,
+  "evaCards": "4086, 5856, 9435",
+  "amCards": "1438, 7738",
+  "evaBonusRules": [
+    {
+      "id": "98e20af1-2dfd-46f7-906b-67e1c2f51ee5",
+      "keyword": "長榮航空股份有限公司",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    },
+    {
+      "id": "87890117-660e-42d8-9286-55550dd3a97e",
+      "keyword": "KLOOK",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "06ac5635-52dd-4694-a35a-46465a640d4c",
+      "keyword": "Agoda",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "6cfbb1af-6b47-4796-9f4e-344fc94e9b74",
+      "keyword": "KKday",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "79ec15a9-9cfd-414a-8bd1-a32e491bd0de",
+      "keyword": "Airbnb",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "b971445b-e9c6-4992-a264-12e3bf636e69",
+      "keyword": "Hotels.com",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "c3623cd8-fe82-4035-8954-1da6ce6799a2",
+      "keyword": "Expedia",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "4ff46773-1819-44bc-a783-86b5c8f0ce2c",
+      "keyword": "Booking.com",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "48ce5ecd-b33a-4984-9d61-5b0de128c13a",
+      "keyword": "Trip.com",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "0c6376b3-ff42-41d1-9860-c2a99f7bfbf7",
+      "keyword": "AsiaYo",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "330b1a25-3ae9-4d51-be44-9cf6f37fc010",
+      "keyword": "TRIP.COM",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "9a618459-45af-4b66-b658-8998b6267d86",
+      "keyword": "BOOKING.COM",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    },
+    {
+      "id": "92d9eebb-ba57-44d8-b344-bbfc7a44cd1c",
+      "keyword": "DiDi Mobility Japan Corp.",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上交通與戶外活動消費"
+    },
+    {
+      "id": "5da57bba-6efb-4bb5-bcd9-a94e07cf8cd1",
+      "keyword": "UBER *TRIP HELP.UBER.COM",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上交通與戶外活動消費"
+    },
+    {
+      "id": "4b9ac995-cd25-4ef4-994c-0edac6ffa5b3",
+      "keyword": "TIMBRLAND DOSH ASIATIQUE",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "14e90049-029c-458e-8b3d-244e35ad8877",
+      "keyword": "PS I LOVE YOU BY-ICONSIAM",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "d72b541f-cfa3-44f1-848b-53b152754532",
+      "keyword": "PETER LUGER STEAK HOUSE T",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "c92f9a3a-7a13-4756-9185-6e570b309cd1",
+      "keyword": "SHIBUYA SCRAMBLE",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "048216f1-eafe-43cd-a60f-ed529e8a0392",
+      "keyword": "STUSSY SHIBUYA CHAPTER",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "f029b038-bb2f-4bfb-a308-a94e8666955a",
+      "keyword": "GONPACHI NISHI-AZABU",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "db5b9f0f-a009-4b57-b2df-c1b991e6b754",
+      "keyword": "AMAN TOKYO",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "20287241-934a-42c1-90b2-f06786d861d0",
+      "keyword": "TEIKENAITOKURABU",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "7fcc0a11-a1ba-4f45-8bc7-636d5f57d519",
+      "keyword": "FAMILYMART",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "f90c52cd-de9e-4523-b486-45491520165d",
+      "keyword": "DONQUIJOTE ASAKUSA",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外實體消費"
+    },
+    {
+      "id": "a8b5dc82-6470-43a8-ae40-6a2ec224ae1c",
+      "keyword": "ＫＬＯＯＫ",
+      "location": "OVERSEAS",
+      "startDate": "",
+      "endDate": "",
+      "note": "海外線上旅遊指定類別 - 海外線上旅遊訂房平台"
+    }
+  ],
+  "amBonusRules": [
+    {
+      "id": "1898c5b9-c2bf-4376-b16e-5a8591efad10",
+      "keyword": "雄獅",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "24d2f54f-7d9d-4b1a-bba6-d6aacd8ae982",
+      "keyword": "東南",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "13fe75c7-17e0-4d88-8688-0bddc2664e9a",
+      "keyword": "可樂",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "981403a4-ebf1-4d7f-9235-4f547f8cac50",
+      "keyword": "易遊網",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "f7b4bc86-76d3-4cbe-afe8-8f821cc79ebc",
+      "keyword": "KKday",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "82cf2e27-92a3-45aa-92ef-e9eb4a8594ae",
+      "keyword": "KLOOK",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "68a275fa-f181-4211-ae59-2141b0078b51",
+      "keyword": "ＫＬＯＯＫ",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "624f5ca8-fe3c-42be-9b16-ce7a0a6acf79",
+      "keyword": "Cathay Pac",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "45df16e7-4fce-476a-9cdd-8196d2a00a84",
+      "keyword": "台灣虎航股份有限公司",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "51f70230-9cb1-4a30-aa5f-58fcdc5069a7",
+      "keyword": "TIGERAIR",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "4cd58b7c-5ff3-486a-b81c-4c58571c5914",
+      "keyword": "星宇航空",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "0b8e417a-4ab0-4057-9202-4b9c398472f6",
+      "keyword": "STARLUX AIRLINES",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "a495e075-2617-4a17-9b9e-7ee34d43ea8c",
+      "keyword": "昇昌",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "69d483a8-6191-4e8b-a4be-ab313866ff48",
+      "keyword": "采盟",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 旅遊類"
+    },
+    {
+      "id": "0a92154c-bd28-4271-9983-ec19ee020c1e",
+      "keyword": "屈臣氏",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "5921c821-49db-42de-b302-3918c5311696",
+      "keyword": "蝦皮",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "5369aa66-e39d-468e-a825-e053880a17c6",
+      "keyword": "SHOPEE",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "cd3eaa18-ed29-4f63-94ca-a9c5420ed445",
+      "keyword": "Shopee",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "78771830-1749-4e8c-a719-e3b978adf29a",
+      "keyword": "shopee",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "9a449712-0c0c-407e-918c-73eab1b398e7",
+      "keyword": "寶雅",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "45e94964-9fd7-4c26-9d60-864538393762",
+      "keyword": "ＰＯＹＡ",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "060559fa-7e82-46d0-b460-93ec28fc083d",
+      "keyword": "高鐵智慧型手機",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "73c2364d-4e0f-4bf4-b2ad-7993e3b8c6b2",
+      "keyword": "高鐵雲林站",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    },
+    {
+      "id": "5194955e-9839-415e-bf48-b26c9ec7eb3e",
+      "keyword": "星巴克",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "哩程加速器 - 生活類"
+    }
+  ],
+  "evaExcludeRules": [
+    {
+      "id": "11f96d29-f966-4a17-8e8f-005c7884a9b2",
+      "keyword": "統一超商",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "便利超商消費"
+    },
+    {
+      "id": "3291bff7-bf6c-41f1-89f8-47ee4b2dbcde",
+      "keyword": "全盈支付－全家",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "便利超商消費"
+    },
+    {
+      "id": "bf821519-79fb-49a5-8abd-2dd74dc84132",
+      "keyword": "全家便利商店",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "便利超商消費"
+    },
+    {
+      "id": "071c5005-d4f9-406b-aeb7-c89b264858ec",
+      "keyword": "萊爾富",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "便利超商消費"
+    },
+    {
+      "id": "e90125c8-4179-49be-b96c-4d704e08bee0",
+      "keyword": "全聯",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "全聯福利中心、大全聯消費（含實體門市與線上通路）"
+    },
+    {
+      "id": "4d446da6-2933-4b0c-a5e6-546be12abcbe",
+      "keyword": " 全支付－全聯",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "全聯福利中心、大全聯消費（含實體門市與線上通路）"
+    },
+    {
+      "id": "9bd6b8cc-7834-4aee-a0c3-40a9cf3a3578",
+      "keyword": "停車場（全國企業社）",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "透過聯合信用卡處理中心小額支付平台之特約商店之消費"
+    },
+    {
+      "id": "fd124edb-583b-4210-9c1b-230cd4aa8368",
+      "keyword": "洪瑞珍三明治－烏日高鐵",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "透過聯合信用卡處理中心小額支付平台之特約商店之消費"
+    },
+    {
+      "id": "147b65a9-c1e2-4ba8-b193-8b5b90c0f3d9",
+      "keyword": "ANA PAY",
+      "location": "ALL",
+      "startDate": "2026-01-01",
+      "endDate": "",
+      "note": "數位（虛擬）貨幣及旅行支票（MCC code 6012）之交易。2026/01/01起無回饋。"
+    },
+    {
+      "id": "59554467-1fae-46de-b1ef-6e0fd7f32ffe",
+      "keyword": "外交部領事事務局",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "公務機關各項費用"
+    },
+    {
+      "id": "09fec74a-039b-44cb-9887-856011603fd5",
+      "keyword": "Visa cash rebate",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "信用卡發卡組織現金回饋"
+    },
+    {
+      "id": "1c372f35-ee0b-4100-be97-31d675fe3729",
+      "keyword": "MastercardTravelsuicaj",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "信用卡發卡組織現金回饋"
+    },
+    {
+      "id": "b5bddf8c-2db9-46d7-9007-212392fe32cf",
+      "keyword": "MastercardTravelReward",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "信用卡發卡組織現金回饋"
+    },
+    {
+      "id": "1be05a8d-fae6-4bff-9685-ce4b0c9b8cbe",
+      "keyword": "分期",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    },
+    {
+      "id": "7ad7b443-a6d5-4282-ba9a-3051a0957a46",
+      "keyword": "手續費",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    },
+    {
+      "id": "c03ba054-da8e-4b8b-ae87-33a8fe281fea",
+      "keyword": "利息",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    },
+    {
+      "id": "a284ec80-0374-4008-b9a1-bbe9ae9c8020",
+      "keyword": "年費",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    }
+  ],
+  "amExcludeRules": [
+    {
+      "id": "00e2451d-0336-4db4-bbb9-d92c64408f3d",
+      "keyword": "統一超商",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "便利超商消費"
+    },
+    {
+      "id": "2d513872-4fef-4418-97a3-d2f01d462a99",
+      "keyword": "全盈支付－全家",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "便利超商消費"
+    },
+    {
+      "id": "6cbc6116-dd8b-4d37-b15e-ef65ced5b054",
+      "keyword": "全家便利商店",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "便利超商消費"
+    },
+    {
+      "id": "8fe74996-d86e-4d24-be0f-61d8765105a5",
+      "keyword": "萊爾富",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "便利超商消費"
+    },
+    {
+      "id": "55cfbf06-d0f8-4791-a18f-5ef5830fda64",
+      "keyword": "全聯",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "全聯福利中心、大全聯消費（含實體門市與線上通路）"
+    },
+    {
+      "id": "fa4fa4a6-2fac-491a-8674-0d496ad42dd3",
+      "keyword": " 全支付－全聯",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "全聯福利中心、大全聯消費（含實體門市與線上通路）"
+    },
+    {
+      "id": "c159d8a4-7f92-4eaf-b26b-ea7a0544b7bc",
+      "keyword": "停車場（全國企業社）",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "透過聯合信用卡處理中心小額支付平台之特約商店之消費。"
+    },
+    {
+      "id": "e7365a21-0d5d-4c7e-adc1-00758f5a6c15",
+      "keyword": "洪瑞珍三明治－烏日高鐵",
+      "location": "DOMESTIC",
+      "startDate": "",
+      "endDate": "",
+      "note": "透過聯合信用卡處理中心小額支付平台之特約商店之消費。"
+    },
+    {
+      "id": "7a4a4779-fd98-4a63-bbcb-f9919ef0837f",
+      "keyword": "ANA PAY",
+      "location": "ALL",
+      "startDate": "2026-01-01",
+      "endDate": "",
+      "note": "數位（虛擬）貨幣及旅行支票（MCC code 6012）之交易。2026/01/01起無回饋。"
+    },
+    {
+      "id": "2b826737-f21c-401e-af17-a1fa8e444e6a",
+      "keyword": "外交部領事事務局",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "公務機關各項費用"
+    },
+    {
+      "id": "676fbcf9-fab6-4611-8082-0532712c9f06",
+      "keyword": "Visa cash rebate",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "信用卡發卡組織現金回饋"
+    },
+    {
+      "id": "53691cec-2571-4371-a061-0198b798e018",
+      "keyword": "MastercardTravelsuicaj",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "信用卡發卡組織現金回饋"
+    },
+    {
+      "id": "49f7cb64-2e5d-4ae6-8c9a-1ea704b2a937",
+      "keyword": "MastercardTravelReward",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": "信用卡發卡組織現金回饋"
+    },
+    {
+      "id": "fa038afa-c942-462e-a997-dca282c083c5",
+      "keyword": "分期",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    },
+    {
+      "id": "53776427-c8cd-4b6c-99c2-f37aa8872660",
+      "keyword": "手續費",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    },
+    {
+      "id": "bf998691-2f9f-40a5-aeff-381288e9d7e7",
+      "keyword": "利息",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    },
+    {
+      "id": "19041a6d-cb5f-474f-bdd2-1c0b7943a921",
+      "keyword": "年費",
+      "location": "ALL",
+      "startDate": "",
+      "endDate": "",
+      "note": ""
+    }
+  ],
+  "evaBaseRate": 22,
+  "evaOverseasRate": 15,
+  "evaBonusRate": 10,
+  "amBaseRate": 25,
+  "amBonusRate": 10,
+  "amMonthlyCap": 100000
+}
