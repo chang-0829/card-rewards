@@ -51,7 +51,7 @@
         const { useState, useEffect, useMemo, useRef } = React;
 
         // 資料庫遷移助手：將舊版字串關鍵字轉換為物件陣列
-        const parseLegacyKeywords = (data, defaultArray = []) => {
+        function parseLegacyKeywords(data, defaultArray = []) {
             if (Array.isArray(data)) return data.map(r => ({ ...r, location: r.location || 'ALL' }));
             if (typeof data === 'string') {
                 return data.split(',').map(s => s.trim()).filter(Boolean).map(keyword => ({
@@ -59,7 +59,7 @@
                 }));
             }
             return defaultArray;
-        };
+        }
 
         const DEFAULT_SETTINGS = {
             billingDay: 5, 
@@ -69,8 +69,8 @@
             amBonusRules: parseLegacyKeywords("餐廳, 飯店, 遊樂園, 交通, 綠界, 藍新, 酷澎"),
             evaExcludeRules: parseLegacyKeywords("手續費, 繳費, 稅, 全聯, 便利商店, 超商"),
             amExcludeRules: parseLegacyKeywords("手續費, 繳費, 稅, 全聯, 便利商店, 超商"),
-            evaBaseRules: [], // 新增：強制一般消費 (例外處理)
-            amBaseRules: [],  // 新增：強制一般消費 (例外處理)
+            evaBaseRules: [], // 強制一般消費 (例外處理)
+            amBaseRules: [],  // 強制一般消費 (例外處理)
             evaOverseasPhysical: [], 
             evaOverseasOnline: [],   
             evaBaseRate: 22,
@@ -145,45 +145,48 @@
                                         <input type="text" value={r.note} placeholder="事由紀錄..." onChange={e => updateRule(r.id, 'note', e.target.value)} className="w-full border border-slate-200 bg-white rounded-lg px-3 py-2 text-[13px] text-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-sm placeholder:text-slate-300" />
                                     </div>
                                     <div className="col-span-1 md:col-span-1 flex justify-center mt-2 md:mt-0">
-                                        <button onClick={() => removeRule(r.id)} className="text-slate-400 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-lg transition-colors" title="刪除規則"><i className="fa-solid fa-trash-can"></i></button>
+                                        <button onClick={() => removeRule(r.id)} className="text-slate-400 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-lg transition-colors" title="刪除規則">
+                                            <i className="fa-solid fa-trash-can"></i>
+                                        </button>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                );
-            }
+                </div>
+            );
+        }
 
-            function InfoTooltip({ rule, theme }) {
-                if (!rule) return null;
-                const iconColor = theme === 'rose' ? 'text-rose-500' : theme === 'emerald' ? 'text-emerald-500' : theme === 'teal' ? 'text-teal-500' : 'text-blue-500';
-                let titleText = '';
-                let titleIcon = '';
-                if (theme === 'rose') { titleText = '觸發排除規則'; titleIcon = 'fa-solid fa-ban text-rose-500'; }
-                else if (theme === 'blue') { titleText = '強制一般消費'; titleIcon = 'fa-solid fa-check text-blue-500'; }
-                else { titleText = '觸發加碼規則'; titleIcon = 'fa-solid fa-star text-emerald-500'; }
-                
-                return (
-                    <div className="relative flex items-center group/tooltip ml-1 z-10 cursor-help">
-                        <div className={`p-0.5 ${iconColor}`}><i className="fa-solid fa-circle-info"></i></div>
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-56 p-3 bg-white text-slate-700 text-[12px] rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-slate-200 font-normal leading-relaxed text-left">
-                            <div className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
-                                <i className={titleIcon}></i> <span>{titleText}</span>
-                            </div>
-                            <div className="grid grid-cols-[50px_1fr] gap-1">
-                                <span className="text-slate-400">關鍵字</span><span className="font-bold text-slate-700">{rule.keyword}</span>
-                                {rule.startDate && <React.Fragment><span className="text-slate-400">開始日</span><span>{rule.startDate.replace(/-/g, '/')}</span></React.Fragment>}
-                                {rule.endDate && <React.Fragment><span className="text-slate-400">結束日</span><span>{rule.endDate.replace(/-/g, '/')}</span></React.Fragment>}
-                            </div>
-                            {rule.note && <div className="mt-2 text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">{rule.note}</div>}
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white"></div>
+        function InfoTooltip({ rule, theme }) {
+            if (!rule) return null;
+            const iconColor = theme === 'rose' ? 'text-rose-500' : theme === 'emerald' ? 'text-emerald-500' : theme === 'teal' ? 'text-teal-500' : 'text-blue-500';
+            let titleText = '';
+            let titleIcon = '';
+            if (theme === 'rose') { titleText = '觸發排除規則'; titleIcon = 'fa-solid fa-ban text-rose-500'; }
+            else if (theme === 'blue') { titleText = '強制一般消費'; titleIcon = 'fa-solid fa-check text-blue-500'; }
+            else { titleText = '觸發加碼規則'; titleIcon = 'fa-solid fa-star text-emerald-500'; }
+            
+            return (
+                <div className="relative flex items-center group/tooltip ml-1 z-10 cursor-help">
+                    <div className={`p-0.5 ${iconColor}`}><i className="fa-solid fa-circle-info"></i></div>
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-56 p-3 bg-white text-slate-700 text-[12px] rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-slate-200 font-normal leading-relaxed text-left">
+                        <div className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
+                            <i className={titleIcon}></i> <span>{titleText}</span>
                         </div>
+                        <div className="grid grid-cols-[50px_1fr] gap-1">
+                            <span className="text-slate-400">關鍵字</span><span className="font-bold text-slate-700">{rule.keyword}</span>
+                            {rule.startDate && <React.Fragment><span className="text-slate-400">開始日</span><span>{rule.startDate.split('-').join('/')}</span></React.Fragment>}
+                            {rule.endDate && <React.Fragment><span className="text-slate-400">結束日</span><span>{rule.endDate.split('-').join('/')}</span></React.Fragment>}
+                        </div>
+                        {rule.note && <div className="mt-2 text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">{rule.note}</div>}
+                        <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white"></div>
                     </div>
-                );
-            }
+                </div>
+            );
+        }
 
         // --- 主應用程式 ---
-        const App = () => {
+        function App() {
             const [rawData, setRawData] = useState([]);
             const [results, setResults] = useState(null);
             const [activeCardTab, setActiveCardTab] = useState('EVA'); 
@@ -338,7 +341,7 @@
                     month += 1;
                     if (month > 12) { month = 1; year += 1; }
                 }
-                return `${year}/${String(month).padStart(2, '0')} 帳單`;
+                return `${year}年${String(month).padStart(2, '0')}月帳單`;
             };
 
             // 衝突判定核心：找出最長的關鍵字
@@ -811,7 +814,7 @@
                             </div>
                             <div>
                                 <h1 className="font-bold text-slate-900 tracking-tight text-lg leading-tight">哩程回饋財報中心</h1>
-                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest leading-none mt-0.5">V12 Pro Dashboard</p>
+                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest leading-none mt-0.5">V12.1 Pro Dashboard</p>
                             </div>
                         </div>
 
@@ -984,8 +987,8 @@
                                                         >
                                                             <td className="py-3 px-8 font-bold text-slate-800 text-[13px] bg-white border-r border-slate-100">
                                                                 <div className="flex items-center gap-3">
-                                                                    <IconChevron isCollapsed={isCollapsed} />
-                                                                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap"><i className="fa-regular fa-calendar-check mr-1"></i> 起息結算日</span> {day}
+                                                                    <i className={`fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`}></i>
+                                                                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap"><i className="fa-regular fa-calendar-check mr-1"></i> 起息結算日</span> {formatChineseDate(day)}
                                                                 </div>
                                                             </td>
                                                             <td className="py-3 px-4 text-slate-500 text-[12px] font-medium flex items-center gap-3">
@@ -1007,7 +1010,7 @@
                                                         {!isCollapsed && filteredTxs.sort((a,b) => new Date(a.txDate) - new Date(b.txDate)).map((tx, idx) => (
                                                             <tr key={idx} className={`bg-white table-row-hover text-[12px] border-b border-slate-50 last:border-0 ${tx.isExclude ? 'opacity-40' : ''}`}>
                                                                 <td className="py-3 px-8 whitespace-nowrap text-slate-500 pl-14">
-                                                                    <span className="text-[10px] text-slate-400 mr-1">消費日</span> {tx.txDate}
+                                                                    <span className="text-[10px] text-slate-400 mr-1">消費日</span> {formatChineseDate(tx.txDate)}
                                                                 </td>
                                                                 <td className="py-3 px-4 text-slate-700">
                                                                     <div className="flex items-center gap-2 relative">
@@ -1053,7 +1056,7 @@
                                                                     </React.Fragment>
                                                                 ) : (
                                                                     <td colSpan="2" className="py-3 px-8 text-right text-[11px] text-slate-300 tracking-wide">
-                                                                        {tx.isExclude ? '無回饋' : '-'}
+                                                                        {tx.isExclude ? '無回饋' : ''}
                                                                     </td>
                                                                 )}
                                                             </tr>
@@ -1069,7 +1072,7 @@
                     </main>
                 </div>
             );
-        };
+        }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
