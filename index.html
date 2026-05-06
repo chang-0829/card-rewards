@@ -1,0 +1,1078 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信用卡哩程回饋財報中心 V12</title>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel/CSV parsing -->
+    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap');
+        
+        body { 
+            background-color: #F8FAFC;
+            font-family: 'Inter', 'Noto Sans TC', -apple-system, sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            color: #1e293b;
+            overflow: hidden; 
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        
+        input[type="file"]::file-selector-button { display: none; }
+        .table-row-hover:hover { background-color: #f8fafc; }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        .modal-enter { animation: modalFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // 資料庫遷移助手：將舊版字串關鍵字轉換為物件陣列
+        const parseLegacyKeywords = (data, defaultArray = []) => {
+            if (Array.isArray(data)) return data.map(r => ({ ...r, location: r.location || 'ALL' }));
+            if (typeof data === 'string') {
+                return data.split(',').map(s => s.trim()).filter(Boolean).map(keyword => ({
+                    id: crypto.randomUUID(), keyword, location: 'ALL', startDate: '', endDate: '', note: ''
+                }));
+            }
+            return defaultArray;
+        };
+
+        const DEFAULT_SETTINGS = {
+            billingDay: 5, 
+            evaCards: "8888, 7777",
+            amCards: "9999, 6666, 7738, 4086",
+            evaBonusRules: parseLegacyKeywords("長榮航空, 旅行社, 機票, 國外自由行"),
+            amBonusRules: parseLegacyKeywords("餐廳, 飯店, 遊樂園, 交通, 綠界, 藍新, 酷澎"),
+            evaExcludeRules: parseLegacyKeywords("手續費, 繳費, 稅, 全聯, 便利商店, 超商"),
+            amExcludeRules: parseLegacyKeywords("手續費, 繳費, 稅, 全聯, 便利商店, 超商"),
+            evaBaseRules: [], // 新增：強制一般消費 (例外處理)
+            amBaseRules: [],  // 新增：強制一般消費 (例外處理)
+            evaOverseasPhysical: [], 
+            evaOverseasOnline: [],   
+            evaBaseRate: 22,
+            evaOverseasRate: 15,
+            evaBonusRate: 10,
+            amBaseRate: 25,
+            amBonusRate: 10,
+            amMonthlyCap: 100000 
+        };
+
+        // --- 核心共用 UI 元件 ---
+        function StatBlock({ label, value, subtext, highlightClass }) {
+            return (
+                <div className="flex flex-col items-end">
+                    <span className="text-[11px] font-medium text-slate-500 mb-0.5">{label}</span>
+                    <span className={`text-xl font-bold tracking-tight ${highlightClass || 'text-slate-800'}`}>{value}</span>
+                    {subtext && <span className="text-[10px] text-slate-400 mt-0.5 font-medium">{subtext}</span>}
+                </div>
+            );
+        }
+
+        function RuleTable({ rules, onChange, title, typeColor, iconClass }) {
+            const addRule = () => onChange([...rules, { id: crypto.randomUUID(), keyword: '', location: 'ALL', startDate: '', endDate: '', note: '' }]);
+            const updateRule = (id, field, val) => onChange(rules.map(r => r.id === id ? { ...r, [field]: val } : r));
+            const removeRule = (id) => onChange(rules.filter(r => r.id !== id));
+            
+            const titleColorClass = typeColor === 'emerald' ? 'text-emerald-700' : typeColor === 'teal' ? 'text-teal-700' : typeColor === 'blue' ? 'text-blue-700' : 'text-rose-700';
+            
+            return (
+                <div className="mb-6">
+                    <div className={`text-[13px] font-bold mb-3 flex justify-between items-center ${titleColorClass}`}>
+                        <span className="flex items-center gap-2"><i className={iconClass}></i> {title}</span>
+                        <button onClick={addRule} className="text-[11px] flex items-center gap-1.5 bg-white border border-slate-200 shadow-sm px-3 py-1.5 rounded-lg hover:bg-slate-50 text-slate-600 transition-colors">
+                            <i className="fa-solid fa-plus"></i> 新增規則
+                        </button>
+                    </div>
+                    <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <div className="hidden md:grid grid-cols-12 gap-3 px-4 py-3 bg-slate-50 border-b border-slate-200 text-[11px] font-semibold text-slate-500 tracking-wider">
+                            <div className="col-span-3">類別關鍵字 <span className="text-rose-500">*</span></div>
+                            <div className="col-span-2">適用地區</div>
+                            <div className="col-span-2">開始日 (選填)</div>
+                            <div className="col-span-2">結束日 (選填)</div>
+                            <div className="col-span-2">備註/事由</div>
+                            <div className="col-span-1 text-center">操作</div>
+                        </div>
+                        <div className="divide-y divide-slate-100">
+                            {rules.length === 0 && <div className="text-center py-6 text-slate-400 text-sm">目前無設定任何規則</div>}
+                            {rules.map(r => (
+                                <div key={r.id} className="grid grid-cols-1 md:grid-cols-12 gap-3 px-4 py-3 items-center hover:bg-slate-50/50 transition-colors">
+                                    <div className="col-span-1 md:col-span-3 flex flex-col">
+                                        <label className="md:hidden text-[10px] text-slate-500 mb-1">關鍵字</label>
+                                        <input type="text" value={r.keyword} placeholder="例如: KLOOK" onChange={e => updateRule(r.id, 'keyword', e.target.value)} className="w-full border border-slate-200 bg-white rounded-lg px-3 py-2 text-[13px] text-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-sm placeholder:text-slate-300" />
+                                    </div>
+                                    <div className="col-span-1 md:col-span-2 flex flex-col">
+                                        <label className="md:hidden text-[10px] text-slate-500 mb-1">適用地區</label>
+                                        <select value={r.location || 'ALL'} onChange={e => updateRule(r.id, 'location', e.target.value)} className="w-full border border-slate-200 bg-white rounded-lg px-2 py-2 text-[12px] text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-sm cursor-pointer h-[38px]">
+                                            <option value="ALL">不分地區</option>
+                                            <option value="DOMESTIC">限國內</option>
+                                            <option value="OVERSEAS">限國外</option>
+                                        </select>
+                                    </div>
+                                    <div className="col-span-1 md:col-span-2 flex flex-col">
+                                        <label className="md:hidden text-[10px] text-slate-500 mb-1">開始日</label>
+                                        <input type="date" value={r.startDate} onChange={e => updateRule(r.id, 'startDate', e.target.value)} className="w-full border border-slate-200 bg-white rounded-lg px-2 py-2 text-[12px] text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-sm h-[38px]" />
+                                    </div>
+                                    <div className="col-span-1 md:col-span-2 flex flex-col">
+                                        <label className="md:hidden text-[10px] text-slate-500 mb-1">結束日</label>
+                                        <input type="date" value={r.endDate} onChange={e => updateRule(r.id, 'endDate', e.target.value)} className="w-full border border-slate-200 bg-white rounded-lg px-2 py-2 text-[12px] text-slate-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-sm h-[38px]" />
+                                    </div>
+                                    <div className="col-span-1 md:col-span-2 flex flex-col">
+                                        <label className="md:hidden text-[10px] text-slate-500 mb-1">備註/事由</label>
+                                        <input type="text" value={r.note} placeholder="事由紀錄..." onChange={e => updateRule(r.id, 'note', e.target.value)} className="w-full border border-slate-200 bg-white rounded-lg px-3 py-2 text-[13px] text-slate-700 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none shadow-sm placeholder:text-slate-300" />
+                                    </div>
+                                    <div className="col-span-1 md:col-span-1 flex justify-center mt-2 md:mt-0">
+                                        <button onClick={() => removeRule(r.id)} className="text-slate-400 hover:text-rose-500 p-2 hover:bg-rose-50 rounded-lg transition-colors" title="刪除規則"><i className="fa-solid fa-trash-can"></i></button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+
+            function InfoTooltip({ rule, theme }) {
+                if (!rule) return null;
+                const iconColor = theme === 'rose' ? 'text-rose-500' : theme === 'emerald' ? 'text-emerald-500' : theme === 'teal' ? 'text-teal-500' : 'text-blue-500';
+                let titleText = '';
+                let titleIcon = '';
+                if (theme === 'rose') { titleText = '觸發排除規則'; titleIcon = 'fa-solid fa-ban text-rose-500'; }
+                else if (theme === 'blue') { titleText = '強制一般消費'; titleIcon = 'fa-solid fa-check text-blue-500'; }
+                else { titleText = '觸發加碼規則'; titleIcon = 'fa-solid fa-star text-emerald-500'; }
+                
+                return (
+                    <div className="relative flex items-center group/tooltip ml-1 z-10 cursor-help">
+                        <div className={`p-0.5 ${iconColor}`}><i className="fa-solid fa-circle-info"></i></div>
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-56 p-3 bg-white text-slate-700 text-[12px] rounded-xl shadow-[0_4px_20px_rgba(0,0,0,0.12)] border border-slate-200 font-normal leading-relaxed text-left">
+                            <div className="font-bold text-slate-800 mb-2 border-b border-slate-100 pb-1.5 flex items-center gap-1.5">
+                                <i className={titleIcon}></i> <span>{titleText}</span>
+                            </div>
+                            <div className="grid grid-cols-[50px_1fr] gap-1">
+                                <span className="text-slate-400">關鍵字</span><span className="font-bold text-slate-700">{rule.keyword}</span>
+                                {rule.startDate && <React.Fragment><span className="text-slate-400">開始日</span><span>{rule.startDate.replace(/-/g, '/')}</span></React.Fragment>}
+                                {rule.endDate && <React.Fragment><span className="text-slate-400">結束日</span><span>{rule.endDate.replace(/-/g, '/')}</span></React.Fragment>}
+                            </div>
+                            {rule.note && <div className="mt-2 text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">{rule.note}</div>}
+                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-white"></div>
+                        </div>
+                    </div>
+                );
+            }
+
+        // --- 主應用程式 ---
+        const App = () => {
+            const [rawData, setRawData] = useState([]);
+            const [results, setResults] = useState(null);
+            const [activeCardTab, setActiveCardTab] = useState('EVA'); 
+            const [fileName, setFileName] = useState('');
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [collapsedGroups, setCollapsedGroups] = useState({});
+            const [selectedPeriod, setSelectedPeriod] = useState('');
+            const [searchTerm, setSearchTerm] = useState('');
+            
+            // 海外實體店分類 Modal 狀態
+            const [unknownOverseasTxs, setUnknownOverseasTxs] = useState([]);
+            const [selectedPhysical, setSelectedPhysical] = useState(new Set());
+            
+            const [settings, setSettings] = useState(() => {
+                try {
+                    const saved = localStorage.getItem('mileageSettingsV12_cache');
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        return {
+                            ...DEFAULT_SETTINGS,
+                            ...parsed,
+                            evaBonusRules: parseLegacyKeywords(parsed.evaBonusRules || parsed.evaBonusKeywords, DEFAULT_SETTINGS.evaBonusRules),
+                            amBonusRules: parseLegacyKeywords(parsed.amBonusRules || parsed.amBonusKeywords, DEFAULT_SETTINGS.amBonusRules),
+                            evaExcludeRules: parseLegacyKeywords(parsed.evaExcludeRules || parsed.evaExcludeKeywords, DEFAULT_SETTINGS.evaExcludeRules),
+                            amExcludeRules: parseLegacyKeywords(parsed.amExcludeRules || parsed.amExcludeKeywords, DEFAULT_SETTINGS.amExcludeRules),
+                            evaBaseRules: parseLegacyKeywords(parsed.evaBaseRules, DEFAULT_SETTINGS.evaBaseRules),
+                            amBaseRules: parseLegacyKeywords(parsed.amBaseRules, DEFAULT_SETTINGS.amBaseRules),
+                        };
+                    }
+                } catch(e) {}
+                return DEFAULT_SETTINGS;
+            });
+
+            // 啟動時向 Github 請求預設 Json
+            useEffect(() => {
+                const fetchDefaultSettings = async () => {
+                    const cached = localStorage.getItem('mileageSettingsV12_cache');
+                    if (!cached) {
+                        try {
+                            const res = await fetch('./mileage_settings.json');
+                            if (res.ok) {
+                                const imported = await res.json();
+                                const merged = { 
+                                    ...DEFAULT_SETTINGS, 
+                                    ...imported,
+                                    evaBonusRules: parseLegacyKeywords(imported.evaBonusRules || imported.evaBonusKeywords, DEFAULT_SETTINGS.evaBonusRules),
+                                    amBonusRules: parseLegacyKeywords(imported.amBonusRules || imported.amBonusKeywords, DEFAULT_SETTINGS.amBonusRules),
+                                    evaExcludeRules: parseLegacyKeywords(imported.evaExcludeRules || imported.evaExcludeKeywords, DEFAULT_SETTINGS.evaExcludeRules),
+                                    amExcludeRules: parseLegacyKeywords(imported.amExcludeRules || imported.amExcludeKeywords, DEFAULT_SETTINGS.amExcludeRules),
+                                    evaBaseRules: parseLegacyKeywords(imported.evaBaseRules, DEFAULT_SETTINGS.evaBaseRules),
+                                    amBaseRules: parseLegacyKeywords(imported.amBaseRules, DEFAULT_SETTINGS.amBaseRules),
+                                };
+                                setSettings(merged);
+                                localStorage.setItem('mileageSettingsV12_cache', JSON.stringify(merged));
+                            }
+                        } catch (e) {
+                            console.log('No default settings found. Using default memory config.');
+                        }
+                    }
+                };
+                fetchDefaultSettings();
+            }, []);
+
+            useEffect(() => {
+                localStorage.setItem('mileageSettingsV12_cache', JSON.stringify(settings));
+            }, [settings]);
+
+            const handleSettingChange = (e) => {
+                const { name, value } = e.target;
+                setSettings(prev => ({ ...prev, [name]: name.includes('Rate') || name.includes('Cap') || name === 'billingDay' ? Number(value) : value }));
+            };
+
+            const updateRuleList = (listName, newList) => {
+                setSettings(prev => ({ ...prev, [listName]: newList }));
+            };
+
+            const exportSettings = () => {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(settings, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "mileage_settings.json");
+                document.body.appendChild(downloadAnchorNode); 
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            };
+
+            const importSettings = (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const imported = JSON.parse(e.target.result);
+                        setSettings({ 
+                            ...DEFAULT_SETTINGS, 
+                            ...imported,
+                            evaBonusRules: parseLegacyKeywords(imported.evaBonusRules || imported.evaBonusKeywords, DEFAULT_SETTINGS.evaBonusRules),
+                            amBonusRules: parseLegacyKeywords(imported.amBonusRules || imported.amBonusKeywords, DEFAULT_SETTINGS.amBonusRules),
+                            evaExcludeRules: parseLegacyKeywords(imported.evaExcludeRules || imported.evaExcludeKeywords, DEFAULT_SETTINGS.evaExcludeRules),
+                            amExcludeRules: parseLegacyKeywords(imported.amExcludeRules || imported.amExcludeKeywords, DEFAULT_SETTINGS.amExcludeRules),
+                            evaBaseRules: parseLegacyKeywords(imported.evaBaseRules, DEFAULT_SETTINGS.evaBaseRules),
+                            amBaseRules: parseLegacyKeywords(imported.amBaseRules, DEFAULT_SETTINGS.amBaseRules),
+                        });
+                        alert("✅ 設定檔匯入成功！");
+                    } catch (error) {
+                        alert("❌ 檔案解析失敗，請確認是否為有效的 JSON 設定檔。");
+                    }
+                };
+                reader.readAsText(file);
+                event.target.value = ''; 
+            };
+
+            const processFile = (file) => {
+                if (!file) return;
+                setFileName(file.name);
+                const reader = new FileReader();
+                reader.onload = (evt) => {
+                    try {
+                        const bstr = evt.target.result;
+                        const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
+                        const ws = wb.Sheets[wb.SheetNames[0]];
+                        const data = XLSX.utils.sheet_to_json(ws, { raw: false, dateNF: 'yyyy-mm-dd' });
+                        const cleanData = data.map(row => {
+                            const newRow = {};
+                            for(let key in row) newRow[key.trim()] = row[key];
+                            return newRow;
+                        });
+                        setRawData(cleanData);
+                    } catch (error) {
+                        alert("檔案解析失敗，請確保為 XLSX/CSV 格式。");
+                    }
+                };
+                reader.readAsBinaryString(file);
+            };
+
+            const advanceRound = (amount, rate) => amount >= 0 ? Math.ceil(amount / rate) : Math.trunc(amount / rate);
+
+            const normalizeDateStr = (dateStr) => {
+                if (!dateStr) return '未知';
+                return String(dateStr).trim().replace(/-/g, '/').substring(0, 10);
+            };
+
+            const getBillingPeriod = (postDateStr, billingDay) => {
+                const d = new Date(postDateStr);
+                if (isNaN(d.getTime())) return '未明帳單期';
+                
+                let year = d.getFullYear();
+                let month = d.getMonth() + 1;
+                const day = d.getDate();
+
+                if (day > billingDay) {
+                    month += 1;
+                    if (month > 12) { month = 1; year += 1; }
+                }
+                return `${year}/${String(month).padStart(2, '0')} 帳單`;
+            };
+
+            // 衝突判定核心：找出最長的關鍵字
+            const resolveRuleConflict = (desc, txDateStr, isOverseas, rulesObj) => {
+                const { bonusRules, excludeRules, baseRules } = rulesObj;
+                
+                const txTime = new Date(txDateStr).getTime();
+                const findMatch = (rulesArray) => {
+                    let bestMatch = null;
+                    for (const rule of rulesArray) {
+                        if (rule.keyword && desc.includes(rule.keyword)) {
+                            let valid = true;
+                            if (rule.startDate) {
+                                const st = new Date(rule.startDate).getTime();
+                                if (!isNaN(st) && txTime < st) valid = false;
+                            }
+                            if (rule.endDate) {
+                                const et = new Date(rule.endDate);
+                                et.setHours(23, 59, 59, 999);
+                                if (!isNaN(et.getTime()) && txTime > et.getTime()) valid = false;
+                            }
+                            if (rule.location === 'DOMESTIC' && isOverseas) valid = false;
+                            if (rule.location === 'OVERSEAS' && !isOverseas) valid = false;
+
+                            if (valid) {
+                                if (!bestMatch || rule.keyword.length > bestMatch.keyword.length) {
+                                    bestMatch = rule;
+                                }
+                            }
+                        }
+                    }
+                    return bestMatch;
+                };
+
+                const matchedBonus = findMatch(bonusRules);
+                const matchedExclude = findMatch(excludeRules);
+                const matchedBase = findMatch(baseRules);
+
+                let maxLen = 0;
+                let finalStatus = 'BASE'; // 預設一般
+                let finalRule = null;
+
+                if (matchedBase && matchedBase.keyword.length > maxLen) {
+                    maxLen = matchedBase.keyword.length;
+                    finalStatus = 'BASE_EXCEPTION';
+                    finalRule = matchedBase;
+                }
+                if (matchedExclude && matchedExclude.keyword.length > maxLen) {
+                    maxLen = matchedExclude.keyword.length;
+                    finalStatus = 'EXCLUDE';
+                    finalRule = matchedExclude;
+                }
+                if (matchedBonus && matchedBonus.keyword.length > maxLen) {
+                    maxLen = matchedBonus.keyword.length;
+                    finalStatus = 'BONUS';
+                    finalRule = matchedBonus;
+                }
+
+                return { finalStatus, finalRule, matchedExclude, matchedBonus, matchedBase };
+            };
+
+            // ===== 核心運算引擎 =====
+            const calculateResults = (data, currentSettings) => {
+                const evaCards = currentSettings.evaCards.split(',').map(s => s.trim()).filter(Boolean);
+                const amCards = currentSettings.amCards.split(',').map(s => s.trim()).filter(Boolean);
+
+                const evaRes = { billingPeriods: {} };
+                const amRes = { billingPeriods: {} };
+                const newUnknownTxs = new Set();
+
+                data.forEach(row => {
+                    const amount = parseFloat(String(row['金額'] || '0').replace(/,/g, ''));
+                    if (isNaN(amount)) return;
+                    
+                    const desc = String(row['交易說明'] || '');
+                    const postDate = normalizeDateStr(row['入帳起息日'] || row['消費日']);
+                    const txDate = normalizeDateStr(row['消費日']);
+                    const cardNo = String(row['卡號'] || '').trim();
+                    const country = String(row['消費國家'] || 'TW').trim().toUpperCase();
+
+                    const isOverseas = country !== 'TW' && country !== '';
+                    const bpKey = getBillingPeriod(postDate, currentSettings.billingDay);
+
+                    // --- 長榮卡 ---
+                    if (evaCards.some(c => cardNo.includes(c))) {
+                        const resolution = resolveRuleConflict(desc, txDate, isOverseas, {
+                            bonusRules: currentSettings.evaBonusRules,
+                            excludeRules: currentSettings.evaExcludeRules,
+                            baseRules: currentSettings.evaBaseRules
+                        });
+
+                        let isExclude = resolution.finalStatus === 'EXCLUDE';
+                        let isEvaBonus = resolution.finalStatus === 'BONUS';
+                        let isBaseException = resolution.finalStatus === 'BASE_EXCEPTION';
+                        let finalRule = resolution.finalRule;
+                        
+                        let base = 0, bonus = 0, total = 0;
+                        let effectiveBaseRate = currentSettings.evaBaseRate;
+                        
+                        if (!isExclude) {
+                            // 海外未判定實體店攔截
+                            if (isOverseas && !isEvaBonus && !isBaseException) {
+                                if (currentSettings.evaOverseasPhysical?.includes(desc)) {
+                                    isEvaBonus = true;
+                                    finalRule = { keyword: '實體交易自動判別', note: '自訂分類' };
+                                    effectiveBaseRate = currentSettings.evaOverseasRate;
+                                } else if (currentSettings.evaOverseasOnline?.includes(desc)) {
+                                    isEvaBonus = false;
+                                    effectiveBaseRate = currentSettings.evaOverseasRate;
+                                } else {
+                                    newUnknownTxs.add(desc);
+                                }
+                            } else if (isOverseas || isEvaBonus) {
+                                effectiveBaseRate = currentSettings.evaOverseasRate; 
+                            } else {
+                                effectiveBaseRate = currentSettings.evaBaseRate; 
+                            }
+                            
+                            base = advanceRound(amount, effectiveBaseRate);
+                            total = isEvaBonus ? advanceRound(amount, currentSettings.evaBonusRate) : base;
+                            bonus = total - base;
+                        }
+
+                        if (!evaRes.billingPeriods[bpKey]) evaRes.billingPeriods[bpKey] = { days: {}, totalBaseMiles: 0, totalBonusMiles: 0, totalValidAmount: 0 };
+                        if (!evaRes.billingPeriods[bpKey].days[postDate]) evaRes.billingPeriods[bpKey].days[postDate] = { transactions: [], sumAmount: 0, sumBaseMiles: 0, sumBonusMiles: 0 };
+
+                        const dayData = evaRes.billingPeriods[bpKey].days[postDate];
+                        dayData.transactions.push({ 
+                            ...row, txDate, postDate, amount, desc, cardNo, country, 
+                            isExclude, matchedExclude: isExclude ? finalRule : null, 
+                            isBonus: isEvaBonus, matchedBonus: isEvaBonus ? finalRule : null,
+                            isBaseException, matchedBase: isBaseException ? finalRule : null,
+                            isOverseas, effectiveBaseRate, base, bonus, total 
+                        });
+                        
+                        if(!isExclude) {
+                            dayData.sumAmount += amount;
+                            evaRes.billingPeriods[bpKey].totalValidAmount += amount;
+                        }
+                        dayData.sumBaseMiles += base;
+                        dayData.sumBonusMiles += bonus;
+
+                        evaRes.billingPeriods[bpKey].totalBaseMiles += base;
+                        evaRes.billingPeriods[bpKey].totalBonusMiles += bonus;
+                    } 
+                    // --- 亞萬卡 ---
+                    else if (amCards.some(c => cardNo.includes(c))) {
+                        const resolution = resolveRuleConflict(desc, txDate, isOverseas, {
+                            bonusRules: currentSettings.amBonusRules,
+                            excludeRules: currentSettings.amExcludeRules,
+                            baseRules: currentSettings.amBaseRules
+                        });
+
+                        let isExclude = resolution.finalStatus === 'EXCLUDE';
+                        let isBaseException = resolution.finalStatus === 'BASE_EXCEPTION';
+                        let isAmBonus = false;
+                        let finalRule = resolution.finalRule;
+
+                        if (!isExclude) {
+                            if (isBaseException) {
+                                isAmBonus = false; 
+                            } else {
+                                isAmBonus = isOverseas || resolution.finalStatus === 'BONUS';
+                            }
+                        }
+                        
+                        if (!amRes.billingPeriods[bpKey]) amRes.billingPeriods[bpKey] = { days: {}, usedBonusAmt: 0, totalBaseMiles: 0, totalBonusMiles: 0, totalValidAmount: 0 };
+                        if (!amRes.billingPeriods[bpKey].days[postDate]) amRes.billingPeriods[bpKey].days[postDate] = { transactions: [], totalBaseAmt: 0, totalBonusAmt: 0, baseMiles: 0, bonusMiles: 0, totalMiles: 0 };
+
+                        const dayData = amRes.billingPeriods[bpKey].days[postDate];
+                        dayData.transactions.push({ 
+                            ...row, txDate, postDate, amount, desc, cardNo, country, 
+                            isExclude, matchedExclude: isExclude ? finalRule : null, 
+                            isBonus: isAmBonus, matchedBonus: (isAmBonus && !isOverseas) ? finalRule : null, 
+                            isBaseException, matchedBase: isBaseException ? finalRule : null,
+                            isOverseas 
+                        });
+
+                        if (!isExclude) {
+                            dayData.totalBaseAmt += amount;
+                            amRes.billingPeriods[bpKey].totalValidAmount += amount;
+                            if (isAmBonus) dayData.totalBonusAmt += amount;
+                        }
+                    }
+                });
+
+                // 如果有未分類海外交易，中斷並彈出視窗
+                if (newUnknownTxs.size > 0) {
+                    setUnknownOverseasTxs(Array.from(newUnknownTxs));
+                    setResults(null);
+                    return;
+                }
+
+                // 亞萬卡二階計算
+                Object.keys(amRes.billingPeriods).forEach(bpKey => {
+                    const bpData = amRes.billingPeriods[bpKey];
+                    const sortedDays = Object.keys(bpData.days).sort((a, b) => new Date(a) - new Date(b));
+                    const maxMonthlyBonusMiles = advanceRound(currentSettings.amMonthlyCap, currentSettings.amBonusRate) - advanceRound(currentSettings.amMonthlyCap, currentSettings.amBaseRate);
+
+                    sortedDays.forEach(day => {
+                        const dayData = bpData.days[day];
+                        dayData.baseMiles = advanceRound(dayData.totalBaseAmt, currentSettings.amBaseRate);
+                        let eligibleBonusAmt = dayData.totalBonusAmt;
+                        const availableCap = currentSettings.amMonthlyCap - bpData.usedBonusAmt;
+                        
+                        if (eligibleBonusAmt > 0) {
+                            if (eligibleBonusAmt >= availableCap) {
+                                dayData.bonusMiles = Math.max(0, maxMonthlyBonusMiles - bpData.totalBonusMiles);
+                                bpData.usedBonusAmt = currentSettings.amMonthlyCap;
+                            } else {
+                                const totalBonusCapMiles = advanceRound(eligibleBonusAmt, currentSettings.amBonusRate);
+                                const alreadyGivenBaseMiles = advanceRound(eligibleBonusAmt, currentSettings.amBaseRate);
+                                dayData.bonusMiles = Math.max(0, totalBonusCapMiles - alreadyGivenBaseMiles);
+                                bpData.usedBonusAmt += eligibleBonusAmt;
+                            }
+                        } else if (eligibleBonusAmt < 0) {
+                            const totalBonusCapMiles = advanceRound(eligibleBonusAmt, currentSettings.amBonusRate);
+                            const alreadyGivenBaseMiles = advanceRound(eligibleBonusAmt, currentSettings.amBaseRate);
+                            dayData.bonusMiles = totalBonusCapMiles - alreadyGivenBaseMiles; 
+                            bpData.usedBonusAmt = Math.max(0, bpData.usedBonusAmt + eligibleBonusAmt); 
+                        }
+
+                        dayData.totalMiles = dayData.baseMiles + dayData.bonusMiles;
+                        bpData.totalBaseMiles += dayData.baseMiles;
+                        bpData.totalBonusMiles += dayData.bonusMiles;
+                    });
+                });
+
+                setResults({ eva: evaRes, am: amRes });
+            };
+
+            useEffect(() => {
+                if (rawData.length > 0 && unknownOverseasTxs.length === 0) {
+                    calculateResults(rawData, settings);
+                }
+            }, [settings, rawData, unknownOverseasTxs.length]);
+
+            const availablePeriods = useMemo(() => {
+                if (!results) return [];
+                const res = activeCardTab === 'EVA' ? results.eva : results.am;
+                return Object.keys(res.billingPeriods).sort().reverse(); 
+            }, [results, activeCardTab]);
+
+            useEffect(() => {
+                if (availablePeriods.length > 0 && !availablePeriods.includes(selectedPeriod)) {
+                    setSelectedPeriod(availablePeriods[0]);
+                }
+            }, [availablePeriods, selectedPeriod]);
+
+            const currentData = useMemo(() => {
+                if (!results || !selectedPeriod) return null;
+                const cardRes = activeCardTab === 'EVA' ? results.eva : results.am;
+                if (!cardRes || !cardRes.billingPeriods) return null;
+                return cardRes.billingPeriods[selectedPeriod];
+            }, [results, activeCardTab, selectedPeriod]);
+
+            const toggleGroup = (key) => setCollapsedGroups(prev => ({ ...prev, [key]: !prev[key] }));
+            const expandAll = () => setCollapsedGroups({});
+            const collapseAll = () => {
+                const allKeys = {};
+                if (currentData) {
+                    const tabKey = activeCardTab;
+                    Object.keys(currentData.days).forEach(day => { allKeys[`${tabKey}-${selectedPeriod}-${day}`] = true; });
+                }
+                setCollapsedGroups(allKeys);
+            };
+
+            // 海外實體分類儲存
+            const handleSaveUnknownTxs = () => {
+                const physicals = Array.from(selectedPhysical);
+                const onlines = unknownOverseasTxs.filter(tx => !selectedPhysical.has(tx));
+                
+                setSettings(prev => ({
+                    ...prev,
+                    evaOverseasPhysical: [...new Set([...(prev.evaOverseasPhysical || []), ...physicals])],
+                    evaOverseasOnline: [...new Set([...(prev.evaOverseasOnline || []), ...onlines])]
+                }));
+                
+                setUnknownOverseasTxs([]); 
+                setSelectedPhysical(new Set());
+            };
+
+            const togglePhysicalSelection = (desc) => {
+                setSelectedPhysical(prev => {
+                    const newSet = new Set(prev);
+                    if (newSet.has(desc)) newSet.delete(desc);
+                    else newSet.add(desc);
+                    return newSet;
+                });
+            };
+
+            // ====== 獨立設定頁面 (Full Page Settings) ======
+            if (isSettingsOpen) {
+                return (
+                    <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden animate-[modalFadeIn_0.2s_ease-out]">
+                        <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
+                            <div className="flex items-center gap-4">
+                                <button onClick={() => setIsSettingsOpen(false)} className="p-2 -ml-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-full transition-colors">
+                                    <i className="fa-solid fa-arrow-left"></i>
+                                </button>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-lg bg-slate-800 text-white flex items-center justify-center shadow-sm">
+                                        <i className="fa-solid fa-gear"></i>
+                                    </div>
+                                    <div>
+                                        <h1 className="font-bold text-slate-900 tracking-tight text-lg leading-tight">系統參數與規則中心</h1>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onClick={() => setIsSettingsOpen(false)} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl text-[14px] font-bold shadow-sm transition-all active:scale-[0.98] hidden md:block">
+                                完成設定並返回
+                            </button>
+                        </header>
+                        
+                        <main className="flex-1 overflow-y-auto custom-scrollbar p-6 md:p-10 relative">
+                            <div className="max-w-5xl mx-auto space-y-10 pb-20">
+                                <section className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                                    <h3 className="text-[15px] font-bold text-slate-800 mb-6 flex items-center gap-2"><i className="fa-solid fa-gear text-slate-400"></i> 基礎設定</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                        <div>
+                                            <label className="text-[12px] font-semibold text-slate-700 block mb-2">每月結帳週期</label>
+                                            <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-shadow h-[42px]">
+                                                <span className="bg-slate-50 text-slate-500 text-[13px] px-4 flex items-center border-r border-slate-200 h-full">每月</span>
+                                                <select name="billingDay" value={settings.billingDay} onChange={handleSettingChange} className="flex-1 border-none px-3 text-[14px] focus:ring-0 font-bold text-blue-700 text-center bg-transparent outline-none cursor-pointer h-full appearance-none">
+                                                    {Array.from({length:31}, (_,i)=>i+1).map(d => <option key={d} value={d}>{d}</option>)}
+                                                </select>
+                                                <span className="bg-slate-50 text-slate-500 text-[13px] px-4 flex items-center border-l border-slate-200 h-full">號</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-[12px] font-semibold text-slate-700 block mb-2">長榮卡號識別 (逗號分隔)</label>
+                                            <input type="text" name="evaCards" value={settings.evaCards} onChange={handleSettingChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 text-[13px] focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition-colors h-[42px]" />
+                                        </div>
+                                        <div>
+                                            <label className="text-[12px] font-semibold text-slate-700 block mb-2">亞萬卡號識別 (逗號分隔)</label>
+                                            <input type="text" name="amCards" value={settings.amCards} onChange={handleSettingChange} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 text-[13px] focus:bg-white focus:ring-2 focus:ring-teal-500 outline-none transition-colors h-[42px]" />
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+                                    <h3 className="text-[15px] font-bold text-slate-800 mb-6 flex items-center gap-2"><i className="fa-solid fa-coins text-yellow-500"></i> 費率參數 (元/哩)</h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-5 gap-5">
+                                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                                            <label className="text-[11px] text-slate-500 font-semibold block mb-2 text-center">長榮國內基本</label>
+                                            <input type="number" name="evaBaseRate" value={settings.evaBaseRate} onChange={handleSettingChange} className="w-full border border-slate-200 rounded-lg p-2 text-center text-[15px] font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                                        </div>
+                                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                                            <label className="text-[11px] text-slate-500 font-semibold block mb-2 text-center">長榮海外基本</label>
+                                            <input type="number" name="evaOverseasRate" value={settings.evaOverseasRate} onChange={handleSettingChange} className="w-full border border-slate-200 rounded-lg p-2 text-center text-[15px] font-bold text-slate-700 focus:ring-2 focus:ring-emerald-500 outline-none" />
+                                        </div>
+                                        <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100">
+                                            <label className="text-[11px] text-emerald-700 font-bold block mb-2 text-center">長榮指定加碼</label>
+                                            <input type="number" name="evaBonusRate" value={settings.evaBonusRate} onChange={handleSettingChange} className="w-full border border-emerald-200 rounded-lg p-2 text-center text-[15px] font-bold text-emerald-700 focus:ring-2 focus:ring-emerald-500 outline-none bg-white shadow-sm" />
+                                        </div>
+                                        <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                                            <label className="text-[11px] text-slate-500 font-semibold block mb-2 text-center">亞萬基本</label>
+                                            <input type="number" name="amBaseRate" value={settings.amBaseRate} onChange={handleSettingChange} className="w-full border border-slate-200 rounded-lg p-2 text-center text-[15px] font-bold text-slate-700 focus:ring-2 focus:ring-teal-500 outline-none" />
+                                        </div>
+                                        <div className="bg-teal-50 rounded-2xl p-4 border border-teal-100">
+                                            <label className="text-[11px] text-teal-700 font-bold block mb-2 text-center">亞萬加碼</label>
+                                            <input type="number" name="amBonusRate" value={settings.amBonusRate} onChange={handleSettingChange} className="w-full border border-teal-200 rounded-lg p-2 text-center text-[15px] font-bold text-teal-700 focus:ring-2 focus:ring-teal-500 outline-none bg-white shadow-sm" />
+                                        </div>
+                                        
+                                        <div className="col-span-2 md:col-span-5 bg-teal-50 border border-teal-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between shadow-sm gap-4 mt-2">
+                                            <label className="text-[14px] text-teal-800 font-bold tracking-wide pl-2">亞萬加碼每月消費額度上限</label>
+                                            <div className="flex items-center border-2 border-teal-300 rounded-xl overflow-hidden bg-white">
+                                                <span className="pl-4 text-slate-400 text-sm font-bold">$</span>
+                                                <input type="number" name="amMonthlyCap" value={settings.amMonthlyCap} onChange={handleSettingChange} className="border-none py-2.5 px-4 text-right text-[16px] font-bold text-teal-700 w-40 outline-none focus:ring-0" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <section className="grid grid-cols-1 gap-10 border-t border-slate-200 pt-8">
+                                    <div className="bg-emerald-50/30 p-8 rounded-3xl border border-emerald-100">
+                                        <div className="flex items-center gap-2 mb-6 pb-3 border-b border-emerald-200/60">
+                                            <i className="fa-solid fa-plane text-2xl text-emerald-600"></i>
+                                            <h3 className="text-[18px] font-bold text-emerald-800">長榮卡規則編輯中心</h3>
+                                        </div>
+                                        <RuleTable rules={settings.evaBonusRules} onChange={l => updateRuleList('evaBonusRules', l)} title="加碼名單 (最優10元/哩)" typeColor="emerald" iconClass="fa-solid fa-star" />
+                                        <div className="h-6"></div>
+                                        <RuleTable rules={settings.evaBaseRules} onChange={l => updateRuleList('evaBaseRules', l)} title="強制一般消費 (取消排除/加碼的例外情況)" typeColor="blue" iconClass="fa-solid fa-check" />
+                                        <div className="h-6"></div>
+                                        <RuleTable rules={settings.evaExcludeRules} onChange={l => updateRuleList('evaExcludeRules', l)} title="排除名單 (無回饋非一般消費)" typeColor="rose" iconClass="fa-solid fa-ban" />
+                                    </div>
+
+                                    <div className="bg-teal-50/30 p-8 rounded-3xl border border-teal-100">
+                                        <div className="flex items-center gap-2 mb-6 pb-3 border-b border-teal-200/60">
+                                            <i className="fa-solid fa-earth-americas text-2xl text-teal-600"></i>
+                                            <h3 className="text-[18px] font-bold text-teal-800">亞萬卡規則編輯中心</h3>
+                                        </div>
+                                        <RuleTable rules={settings.amBonusRules} onChange={l => updateRuleList('amBonusRules', l)} title="加碼名單 (海外已自動判定，無需設定)" typeColor="teal" iconClass="fa-solid fa-star" />
+                                        <div className="h-6"></div>
+                                        <RuleTable rules={settings.amBaseRules} onChange={l => updateRuleList('amBaseRules', l)} title="強制一般消費 (取消排除/加碼的例外情況)" typeColor="blue" iconClass="fa-solid fa-check" />
+                                        <div className="h-6"></div>
+                                        <RuleTable rules={settings.amExcludeRules} onChange={l => updateRuleList('amExcludeRules', l)} title="排除名單 (無回饋非一般消費)" typeColor="rose" iconClass="fa-solid fa-ban" />
+                                    </div>
+                                </section>
+                            </div>
+                        </main>
+
+                        <footer className="bg-white border-t border-slate-200 px-6 py-4 shrink-0 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
+                            <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+                                <div className="flex gap-3 w-full md:w-auto">
+                                    <label className="cursor-pointer flex-1 md:flex-none justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-[13px] font-semibold shadow-sm transition-colors flex items-center gap-2">
+                                        <input type="file" accept=".json" onChange={importSettings} className="hidden" />
+                                        <i className="fa-solid fa-cloud-arrow-up"></i> 匯入設定檔
+                                    </label>
+                                    <button onClick={exportSettings} className="flex-1 md:flex-none justify-center bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl text-[13px] font-semibold shadow-sm transition-colors flex items-center gap-2">
+                                        <i className="fa-solid fa-download"></i> 匯出設定檔
+                                    </button>
+                                </div>
+                                <button onClick={() => setIsSettingsOpen(false)} className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white px-10 py-3 rounded-xl text-[14px] font-bold shadow-lg shadow-blue-600/30 transition-all active:scale-[0.98] block md:hidden">
+                                    返回
+                                </button>
+                            </div>
+                        </footer>
+                    </div>
+                );
+            }
+
+            // ====== 主儀表板畫面 (Dashboard) ======
+            return (
+                <div className="flex flex-col h-screen overflow-hidden bg-[#F8FAFC]">
+                    
+                    {/* 海外未知交易確認視窗 (Modal) */}
+                    {unknownOverseasTxs.length > 0 && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[modalFadeIn_0.2s_ease-out]">
+                            <div className="bg-white rounded-3xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden border border-slate-200">
+                                <div className="px-8 py-6 border-b border-slate-100 bg-slate-50 flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-lg"><i className="fa-solid fa-plane-departure"></i></div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-slate-800">長榮卡海外實體交易確認</h2>
+                                        <p className="text-sm text-slate-500 mt-1">海外消費享 15元1哩，若為「實體交易」則加碼享 10元1哩。</p>
+                                    </div>
+                                </div>
+                                <div className="p-8 overflow-y-auto max-h-[50vh] custom-scrollbar">
+                                    <p className="text-[13px] font-semibold text-slate-600 mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                                        以下是新偵測到的長榮海外店家，請勾選屬於 <span className="text-emerald-600">「實體交易」</span> 的項目（未勾選將視為線上交易）：
+                                    </p>
+                                    <div className="flex gap-3 mb-4 border-b border-slate-200 pb-4">
+                                        <button onClick={() => setSelectedPhysical(new Set(unknownOverseasTxs))} className="text-[12px] font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded transition-colors">全選</button>
+                                        <button onClick={() => setSelectedPhysical(new Set())} className="text-[12px] font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded transition-colors">全取消</button>
+                                    </div>
+                                    <div className="space-y-2">
+                                        {unknownOverseasTxs.map(desc => (
+                                            <label key={desc} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selectedPhysical.has(desc) ? 'bg-emerald-50 border-emerald-200' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                                <input type="checkbox" checked={selectedPhysical.has(desc)} onChange={() => togglePhysicalSelection(desc)} className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500" />
+                                                <span className={`text-[13px] font-semibold ${selectedPhysical.has(desc) ? 'text-emerald-800' : 'text-slate-700'}`}>{desc}</span>
+                                                {selectedPhysical.has(desc) && <span className="ml-auto text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold">10元1哩</span>}
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="px-8 py-5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                                    <button onClick={handleSaveUnknownTxs} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-2.5 rounded-xl text-[14px] font-bold shadow-md transition-all active:scale-[0.98]">
+                                        儲存並繼續試算
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Header */}
+                    <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 z-10 shadow-sm relative">
+                        <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
+                                <i className="fa-solid fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <h1 className="font-bold text-slate-900 tracking-tight text-lg leading-tight">哩程回饋財報中心</h1>
+                                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest leading-none mt-0.5">V12 Pro Dashboard</p>
+                            </div>
+                        </div>
+
+                        {results && (
+                            <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0 hidden md:flex">
+                                <button 
+                                    onClick={() => setActiveCardTab('EVA')} 
+                                    className={`px-8 py-3 text-[14px] font-bold border-b-[3px] transition-colors flex items-center gap-2 ${activeCardTab === 'EVA' ? 'border-emerald-500 text-emerald-700 bg-emerald-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                                >
+                                    <i className="fa-solid fa-plane"></i> 長榮航空
+                                </button>
+                                <button 
+                                    onClick={() => setActiveCardTab('AM')} 
+                                    className={`px-8 py-3 text-[14px] font-bold border-b-[3px] transition-colors flex items-center gap-2 ${activeCardTab === 'AM' ? 'border-teal-500 text-teal-700 bg-teal-50/50' : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+                                >
+                                    <i className="fa-solid fa-earth-americas"></i> 亞洲萬里通
+                                </button>
+                            </div>
+                        )}
+
+                        <div className="flex items-center gap-3">
+                            {results && (
+                                <div className="hidden lg:flex items-center bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 focus-within:ring-2 focus-within:ring-blue-500 focus-within:bg-white transition-colors">
+                                    <i className="fa-solid fa-search text-slate-400 mr-2 text-sm"></i>
+                                    <input 
+                                        type="text" 
+                                        placeholder="搜尋交易明細..." 
+                                        value={searchTerm} 
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="bg-transparent border-none outline-none text-[13px] w-40 placeholder:text-slate-400"
+                                    />
+                                    {searchTerm && <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600"><i className="fa-solid fa-circle-xmark"></i></button>}
+                                </div>
+                            )}
+
+                            <label className="cursor-pointer bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl text-[13px] font-semibold shadow-sm transition-colors flex items-center gap-2">
+                                <input type="file" accept=".xlsx, .xls, .csv" onChange={(e) => processFile(e.target.files[0])} className="hidden" />
+                                <i className="fa-solid fa-file-import"></i>
+                                {fileName ? '重新匯入' : '匯入帳單'}
+                            </label>
+
+                            <button onClick={() => setIsSettingsOpen(true)} className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-[13px] font-semibold shadow-md transition-colors flex items-center gap-2">
+                                <i className="fa-solid fa-gear"></i> 系統設定
+                            </button>
+                        </div>
+                    </header>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-slate-50">
+                        
+                        {/* Welcome Modal */}
+                        {rawData.length === 0 && (
+                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-50">
+                                <div className="max-w-md w-full bg-white rounded-3xl p-10 text-center shadow-xl border border-slate-100 modal-enter">
+                                    <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-inner border border-blue-100 text-3xl"><i className="fa-solid fa-file-invoice"></i></div>
+                                    <h2 className="text-2xl font-bold text-slate-800 mb-2 tracking-tight">匯入您的消費紀錄</h2>
+                                    <p className="text-slate-500 text-sm mb-8 leading-relaxed">請將包含消費日、交易說明、金額、卡號及消費國家的 Excel 或 CSV 檔案上傳，體驗 V12 智慧分析引擎。</p>
+                                    
+                                    <label className="block w-full cursor-pointer bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold shadow-[0_4px_14px_rgba(37,99,235,0.25)] transition-all transform hover:scale-[1.02] active:scale-[0.98]">
+                                        <input type="file" accept=".xlsx, .xls, .csv" onChange={(e) => processFile(e.target.files[0])} className="hidden" />
+                                        <div className="flex items-center justify-center gap-2">
+                                            <i className="fa-solid fa-cloud-arrow-up"></i> 選擇檔案並開始試算
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 資料展示區 */}
+                        {results && currentData && (
+                            <div className="max-w-7xl mx-auto w-full p-6 lg:p-10 animate-[modalFadeIn_0.4s_ease-out]">
+                                
+                                {/* Mobile Search */}
+                                <div className="lg:hidden flex items-center bg-white border border-slate-200 rounded-xl px-4 py-2 mb-4 focus-within:ring-2 focus-within:ring-blue-500 shadow-sm">
+                                    <i className="fa-solid fa-search text-slate-400 mr-2 text-sm"></i>
+                                    <input type="text" placeholder="搜尋交易明細..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-transparent border-none outline-none text-[13px] w-full" />
+                                </div>
+
+                                {/* Top Control: Dropdown */}
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+                                    <div className="md:hidden flex bg-slate-200/50 p-1 rounded-xl w-full">
+                                        <button onClick={() => setActiveCardTab('EVA')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex justify-center items-center gap-1 ${activeCardTab === 'EVA' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}><i className="fa-solid fa-plane"></i> 長榮卡</button>
+                                        <button onClick={() => setActiveCardTab('AM')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex justify-center items-center gap-1 ${activeCardTab === 'AM' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500'}`}><i className="fa-solid fa-earth-americas"></i> 亞萬卡</button>
+                                    </div>
+
+                                    <div className="flex items-center gap-3 w-full md:w-auto ml-auto">
+                                        <div className="flex items-center bg-white p-1 rounded-xl border border-slate-200 shadow-sm shrink-0">
+                                            <button onClick={expandAll} className="px-3 py-1.5 text-[12px] font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">全部展開</button>
+                                            <div className="w-[1px] h-4 bg-slate-200 mx-1"></div>
+                                            <button onClick={collapseAll} className="px-3 py-1.5 text-[12px] font-semibold text-slate-600 hover:bg-slate-50 rounded-lg transition-colors">全部收合</button>
+                                        </div>
+
+                                        <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-slate-200 flex items-center gap-3 w-full md:w-auto">
+                                            <span className="text-slate-500 text-[13px] font-semibold whitespace-nowrap">檢視帳單：</span>
+                                            <select 
+                                                value={selectedPeriod} 
+                                                onChange={(e) => setSelectedPeriod(e.target.value)}
+                                                className="bg-slate-50 border border-slate-200 text-slate-800 text-[14px] font-bold rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-blue-500 outline-none w-full md:w-auto cursor-pointer"
+                                            >
+                                                {availablePeriods.map(p => <option key={p} value={p}>{p}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="bg-white rounded-[24px] border border-slate-200 shadow-[0_8px_30px_rgba(0,0,0,0.03)] overflow-hidden">
+                                    
+                                    {/* Card Header */}
+                                    <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-white relative">
+                                        <div className={`absolute top-0 left-0 w-full h-1.5 ${activeCardTab === 'EVA' ? 'bg-emerald-500' : 'bg-teal-500'}`}></div>
+                                        <div className="w-full md:w-auto">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase tracking-wider ${activeCardTab === 'EVA' ? 'bg-emerald-100 text-emerald-800' : 'bg-teal-100 text-teal-800'}`}>
+                                                    {activeCardTab === 'EVA' ? '長榮卡合併計算' : '亞萬卡合併計算'}
+                                                </span>
+                                            </div>
+                                            <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{selectedPeriod}</h3>
+                                            
+                                            {/* 亞萬進度條 */}
+                                            {activeCardTab === 'AM' && (
+                                                <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 w-full md:w-80 mt-4">
+                                                    <div className="flex justify-between text-[11px] font-semibold text-slate-500 mb-2">
+                                                        <span>加碼上限 10萬元 消耗進度</span>
+                                                        <span>{currentData.usedBonusAmt.toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="w-full bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                                                        <div className={`h-1.5 rounded-full transition-all duration-500 ${currentData.usedBonusAmt >= settings.amMonthlyCap ? 'bg-rose-500' : 'bg-teal-500'}`} style={{width: `${Math.min(100, (currentData.usedBonusAmt / settings.amMonthlyCap)*100)}%`}}></div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex gap-4 md:gap-8 w-full md:w-auto justify-end flex-wrap">
+                                            <StatBlock label="當期有效消費總額" value={`$${currentData.totalValidAmount.toLocaleString()}`} subtext="(已剔除非一般消費)" />
+                                            <StatBlock label="當期基本發放" value={currentData.totalBaseMiles.toLocaleString()} />
+                                            <StatBlock label="次期加碼差額" value={`+${currentData.totalBonusMiles.toLocaleString()}`} highlightClass={activeCardTab === 'EVA' ? 'text-emerald-600' : 'text-teal-600'} />
+                                        </div>
+                                    </div>
+
+                                    {/* Table */}
+                                    <div className="overflow-x-auto w-full">
+                                        <table className="w-full text-left border-collapse min-w-[800px]">
+                                            <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                                                <tr>
+                                                    <th className="py-3 px-8 w-[22%]">日期資訊</th>
+                                                    <th className="py-3 px-4 w-[40%]">消費明細</th>
+                                                    <th className="py-3 px-6 text-right w-[12%]">金額</th>
+                                                    <th className="py-3 px-6 text-right w-[13%]">基本回饋</th>
+                                                    <th className="py-3 px-8 text-right w-[13%]">加碼差額</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="text-[13px]">
+                                                {Object.entries(currentData.days).sort((a,b) => new Date(a[0]) - new Date(b[0])).map(([day, dayData]) => {
+                                                    const groupKey = `${activeCardTab}-${selectedPeriod}-${day}`;
+                                                    const isCollapsed = collapsedGroups[groupKey];
+                                                    const isEVA = activeCardTab === 'EVA';
+                                                    
+                                                    const filteredTxs = dayData.transactions.filter(tx => 
+                                                        searchTerm === '' || 
+                                                        tx.desc.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                                                        tx.amount.toString().includes(searchTerm)
+                                                    );
+                                                    
+                                                    if (searchTerm !== '' && filteredTxs.length === 0) return null;
+
+                                                    return (
+                                                    <React.Fragment key={day}>
+                                                        <tr 
+                                                            className={`border-y border-slate-100 group cursor-pointer transition-colors ${isEVA ? 'bg-emerald-50/20 hover:bg-emerald-50/50' : 'bg-teal-50/20 hover:bg-teal-50/50'}`}
+                                                            onClick={() => toggleGroup(groupKey)}
+                                                        >
+                                                            <td className="py-3 px-8 font-bold text-slate-800 text-[13px] bg-white border-r border-slate-100">
+                                                                <div className="flex items-center gap-3">
+                                                                    <IconChevron isCollapsed={isCollapsed} />
+                                                                    <span className="text-[10px] text-slate-400 font-medium whitespace-nowrap"><i className="fa-regular fa-calendar-check mr-1"></i> 起息結算日</span> {day}
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-3 px-4 text-slate-500 text-[12px] font-medium flex items-center gap-3">
+                                                                {isEVA ? (
+                                                                    <span>結算總額 ${dayData.sumAmount.toLocaleString()}</span>
+                                                                ) : (
+                                                                    <React.Fragment>
+                                                                        <span>結算總額 ${dayData.totalBaseAmt.toLocaleString()}</span>
+                                                                        <span className="text-slate-300">|</span>
+                                                                        <span className="text-teal-600 font-semibold bg-white px-1.5 py-0.5 rounded shadow-sm border border-teal-100">認列加碼 ${dayData.totalBonusAmt.toLocaleString()}</span>
+                                                                    </React.Fragment>
+                                                                )}
+                                                            </td>
+                                                            <td className="py-3 px-6 text-right text-slate-400 text-[12px]">-</td>
+                                                            <td className="py-3 px-6 text-right text-slate-800 text-[13px] font-bold">{isEVA ? dayData.sumBaseMiles : dayData.baseMiles}</td>
+                                                            <td className={`py-3 px-8 text-right text-[13px] font-bold ${isEVA ? 'text-emerald-600' : 'text-teal-600'}`}>{dayData.sumBonusMiles > 0 || dayData.bonusMiles > 0 ? '+' : ''}{isEVA ? dayData.sumBonusMiles : dayData.bonusMiles}</td>
+                                                        </tr>
+                                                        
+                                                        {!isCollapsed && filteredTxs.sort((a,b) => new Date(a.txDate) - new Date(b.txDate)).map((tx, idx) => (
+                                                            <tr key={idx} className={`bg-white table-row-hover text-[12px] border-b border-slate-50 last:border-0 ${tx.isExclude ? 'opacity-40' : ''}`}>
+                                                                <td className="py-3 px-8 whitespace-nowrap text-slate-500 pl-14">
+                                                                    <span className="text-[10px] text-slate-400 mr-1">消費日</span> {tx.txDate}
+                                                                </td>
+                                                                <td className="py-3 px-4 text-slate-700">
+                                                                    <div className="flex items-center gap-2 relative">
+                                                                        {searchTerm !== '' ? (
+                                                                            <span className="truncate max-w-[240px] font-medium text-blue-600" title={tx.desc}>{tx.desc}</span>
+                                                                        ) : (
+                                                                            <span className="truncate max-w-[240px] font-medium" title={tx.desc}>{tx.desc}</span>
+                                                                        )}
+                                                                        
+                                                                        <div className="flex gap-1 shrink-0 items-center">
+                                                                            <span className="text-[9px] text-slate-400 font-mono bg-slate-100 px-1.5 py-0.5 rounded shadow-sm">{tx.cardNo}</span>
+                                                                            {tx.isOverseas && <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border text-indigo-600 bg-indigo-50 border-indigo-100`}>海外</span>}
+                                                                            {tx.isExclude && (
+                                                                                <React.Fragment>
+                                                                                    <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded shadow-sm border border-rose-100">排除</span>
+                                                                                    <InfoTooltip rule={tx.matchedExclude} theme="rose" />
+                                                                                </React.Fragment>
+                                                                            )}
+                                                                            {tx.isBaseException && !tx.isExclude && (
+                                                                                <React.Fragment>
+                                                                                    <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded shadow-sm border border-blue-100">強制一般</span>
+                                                                                    <InfoTooltip rule={tx.matchedBase} theme="blue" />
+                                                                                </React.Fragment>
+                                                                            )}
+                                                                            {((tx.isBonus && !tx.isOverseas) || (tx.isOverseas && (!isEVA || tx.isBonus))) && !tx.isExclude && !tx.isBaseException && (
+                                                                                <React.Fragment>
+                                                                                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm border ${isEVA ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-teal-600 bg-teal-50 border-teal-100'}`}>加碼</span>
+                                                                                    {tx.matchedBonus && <InfoTooltip rule={tx.matchedBonus} theme={isEVA ? 'emerald' : 'teal'} />}
+                                                                                </React.Fragment>
+                                                                            )}
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="py-3 px-6 text-right text-slate-600 font-medium">
+                                                                    {tx.amount < 0 ? <span className="text-rose-500">{tx.amount.toLocaleString()}</span> : tx.amount.toLocaleString()}
+                                                                </td>
+                                                                {isEVA ? (
+                                                                    <React.Fragment>
+                                                                        <td className="py-3 px-6 text-right text-slate-600 font-semibold">
+                                                                            {tx.base}
+                                                                        </td>
+                                                                        <td className="py-3 px-8 text-right text-emerald-600 font-bold">{tx.bonus > 0 ? `+${tx.bonus}` : tx.bonus < 0 ? tx.bonus : '-'}</td>
+                                                                    </React.Fragment>
+                                                                ) : (
+                                                                    <td colSpan="2" className="py-3 px-8 text-right text-[11px] text-slate-300 tracking-wide">
+                                                                        {tx.isExclude ? '無回饋' : '-'}
+                                                                    </td>
+                                                                )}
+                                                            </tr>
+                                                        ))}
+                                                    </React.Fragment>
+                                                )})}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
