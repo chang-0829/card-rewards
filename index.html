@@ -269,7 +269,7 @@
                             newRow['消費日'] = fixDate(row['消費日']);
                             newRow['入帳起息日'] = fixDate(row['入帳起息日'] || row['消費日']);
                             
-                            // === 修正：處理並正規化各種金額欄位（支援負數與特殊符號） ===
+                            // === 處理並正規化各種金額欄位（支援負數與特殊符號） ===
                             let rawAmount = String(row['金額'] || row['臺幣金額'] || row['新臺幣金額'] || '0');
                             // 替換全形與特殊減號為標準半形減號 '-'，去除所有空白、千分位、幣別符號
                             rawAmount = rawAmount.replace(/[−－]/g, '-').replace(/TWD/i, '').replace(/\$/g, '').replace(/,/g, '').replace(/\s+/g, '');
@@ -305,8 +305,8 @@
                 reader.readAsBinaryString(file);
             };
 
-            // 修正：正數無條件進位，負數無條件捨去（確保退刷扣除當初發放的精準哩程數）
-            const advanceRound = (amount, rate) => amount >= 0 ? Math.ceil(amount / rate) : Math.floor(amount / rate);
+            // 修正：正數無條件進位，負數無條件捨去小數點（Math.trunc），解決退刷扣繳的問題
+            const advanceRound = (amount, rate) => amount >= 0 ? Math.ceil(amount / rate) : Math.trunc(amount / rate);
 
             const normalizeDateStr = (dateStr) => {
                 if (!dateStr) return '未知';
