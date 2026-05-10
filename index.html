@@ -4,11 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>信用卡哩程回饋財報中心 V12</title>
+    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SheetJS for Excel/CSV parsing -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -62,10 +67,10 @@
             amCards: "9999, 6666, 7738, 4086",
             evaBonusRules: parseLegacyKeywords("長榮航空, 旅行社, 機票, 國外自由行"),
             amBonusRules: parseLegacyKeywords("餐廳, 飯店, 遊樂園, 交通, 綠界, 藍新, 酷澎"),
-            evaExcludeRules: parseLegacyKeywords("手續費, 繳費, 稅, 全聯, 便利商店, 超商"),
-            amExcludeRules: parseLegacyKeywords("手續費, 繳費, 稅, 全聯, 便利商店, 超商"),
-            evaBaseRules: [], // 強制一般消費 (例外處理)
-            amBaseRules: [],  // 強制一般消費 (例外處理)
+            evaExcludeRules: parseLegacyKeywords("手續費, 繳費, 繳款, 稅, 全聯, 便利商店, 超商"), // 新增繳款
+            amExcludeRules: parseLegacyKeywords("手續費, 繳費, 繳款, 稅, 全聯, 便利商店, 超商"), // 新增繳款
+            evaBaseRules: [], 
+            amBaseRules: [],  
             evaOverseasPhysical: [], 
             evaOverseasOnline: [],   
             evaBaseRate: 22,
@@ -190,7 +195,7 @@
                 event.target.value = ''; 
             };
 
-            // ====== 核心修正：強化檔案解析引擎 ======
+            // ====== 檔案解析引擎 ======
             const processFile = (file) => {
                 if (!file) return;
                 setFileName(file.name);
@@ -201,7 +206,7 @@
                         const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
                         const ws = wb.Sheets[wb.SheetNames[0]];
                         
-                        // 先將 Sheet 轉為 2D 陣列以便動態找尋實際標題列 (跳過前面無關的資訊)
+                        // 先將 Sheet 轉為 2D 陣列以便動態找尋實際標題列
                         const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy/mm/dd' });
                         
                         let headerRowIdx = -1;
@@ -243,7 +248,7 @@
                             
                             const newRow = {};
                             
-                            // === 修正 1：處理日期格式 (自動補齊年份並解決跨年) ===
+                            // === 處理日期格式 (自動補齊年份並解決跨年) ===
                             const fixDate = (dateStr) => {
                                 if (!dateStr || dateStr === '−' || dateStr === '-') return '';
                                 let d = String(dateStr).trim();
@@ -264,20 +269,21 @@
                             newRow['消費日'] = fixDate(row['消費日']);
                             newRow['入帳起息日'] = fixDate(row['入帳起息日'] || row['消費日']);
                             
-                            // === 修正 2：處理並正規化各種金額欄位 ===
-                            let rawAmount = row['金額'] || row['臺幣金額'] || row['新臺幣金額'] || '0';
-                            rawAmount = rawAmount.replace(/TWD/i, '').replace(/\$/g, '').replace(/,/g, '').trim();
+                            // === 修正：處理並正規化各種金額欄位（支援負數與特殊符號） ===
+                            let rawAmount = String(row['金額'] || row['臺幣金額'] || row['新臺幣金額'] || '0');
+                            // 替換全形與特殊減號為標準半形減號 '-'，去除所有空白、千分位、幣別符號
+                            rawAmount = rawAmount.replace(/[−－]/g, '-').replace(/TWD/i, '').replace(/\$/g, '').replace(/,/g, '').replace(/\s+/g, '');
                             newRow['金額'] = rawAmount;
                             
-                            // === 修正 3：統一交易說明欄位 ===
+                            // === 統一交易說明欄位 ===
                             newRow['交易說明'] = row['交易說明'] || row['消費店家'] || '';
                             
-                            // === 修正 4：清理卡號雜亂字元 (如 ="4086" 或 4086 / 7265) ===
+                            // === 清理卡號雜亂字元 (如 ="4086" 或 4086 / 7265) ===
                             let rawCard = row['卡號'] || row['卡號/行動末四碼'] || row['卡號末四碼'] || '';
                             rawCard = rawCard.replace(/=/g, '').replace(/"/g, '').split('/')[0].trim();
                             newRow['卡號'] = rawCard;
                             
-                            // === 修正 5：清理消費國家 (過濾 TW / TWD) ===
+                            // === 清理消費國家 (過濾 TW / TWD) ===
                             let rawCountry = row['消費國家'] || row['消費國家/幣別'] || 'TW';
                             rawCountry = rawCountry.split('/')[0].trim();
                             if(rawCountry === '−' || rawCountry === '-') rawCountry = 'TW';
@@ -299,7 +305,8 @@
                 reader.readAsBinaryString(file);
             };
 
-            const advanceRound = (amount, rate) => amount >= 0 ? Math.ceil(amount / rate) : Math.trunc(amount / rate);
+            // 修正：正數無條件進位，負數無條件捨去（確保退刷扣除當初發放的精準哩程數）
+            const advanceRound = (amount, rate) => amount >= 0 ? Math.ceil(amount / rate) : Math.floor(amount / rate);
 
             const normalizeDateStr = (dateStr) => {
                 if (!dateStr) return '未知';
@@ -421,8 +428,8 @@
                         let effectiveBaseRate = currentSettings.evaBaseRate;
                         
                         if (!isExclude) {
-                            // 海外未判定實體店攔截
-                            if (isOverseas && !isEvaBonus && !isBaseException) {
+                            // 海外未判定實體店攔截 (排除退刷等負數)
+                            if (amount > 0 && isOverseas && !isEvaBonus && !isBaseException) {
                                 if (currentSettings.evaOverseasPhysical?.includes(desc)) {
                                     isEvaBonus = true;
                                     finalRule = { keyword: '實體交易自動判別', note: '自訂分類' };
@@ -611,7 +618,7 @@
                 });
             };
 
-            // ====== 渲染輔助函數 (解決 Focus Loss) ======
+            // ====== 渲染輔助函數 ======
             const renderStatBlock = (label, value, subtext, highlightClass) => (
                 <div className="flex flex-col items-end">
                     <span className="text-[11px] font-medium text-slate-500 mb-0.5">{label}</span>
@@ -713,7 +720,7 @@
                 );
             };
 
-            // ====== 獨立設定頁面 (Full Page Settings) ======
+            // ====== 獨立設定頁面 ======
             if (isSettingsOpen) {
                 return (
                     <div className="flex flex-col h-screen bg-[#F8FAFC] overflow-hidden animate-[modalFadeIn_0.2s_ease-out]">
@@ -844,11 +851,10 @@
                 );
             }
 
-            // ====== 主儀表板畫面 (Dashboard) ======
+            // ====== 主儀表板畫面 ======
             return (
                 <div className="flex flex-col h-screen overflow-hidden bg-[#F8FAFC]">
                     
-                    {/* 海外未知交易確認視窗 (Modal) */}
                     {unknownOverseasTxs.length > 0 && (
                         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-[modalFadeIn_0.2s_ease-out]">
                             <div className="bg-white rounded-3xl w-full max-w-2xl flex flex-col shadow-2xl overflow-hidden border border-slate-200">
@@ -886,7 +892,6 @@
                         </div>
                     )}
 
-                    {/* Header */}
                     <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shrink-0 z-10 shadow-sm relative">
                         <div className="flex items-center gap-3">
                             <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-sm">
@@ -942,10 +947,7 @@
                         </div>
                     </header>
 
-                    {/* Main Content Area */}
                     <main className="flex-1 overflow-y-auto custom-scrollbar relative bg-slate-50">
-                        
-                        {/* Welcome Modal */}
                         {rawData.length === 0 && (
                             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center p-6 bg-slate-50">
                                 <div className="max-w-md w-full bg-white rounded-3xl p-10 text-center shadow-xl border border-slate-100 modal-enter">
@@ -963,17 +965,13 @@
                             </div>
                         )}
 
-                        {/* 資料展示區 */}
                         {results && currentData && (
                             <div className="max-w-7xl mx-auto w-full p-6 lg:p-10 animate-[modalFadeIn_0.4s_ease-out]">
-                                
-                                {/* Mobile Search */}
                                 <div className="lg:hidden flex items-center bg-white border border-slate-200 rounded-xl px-4 py-2 mb-4 focus-within:ring-2 focus-within:ring-blue-500 shadow-sm">
                                     <i className="fa-solid fa-search text-slate-400 mr-2 text-sm"></i>
                                     <input type="text" placeholder="搜尋交易明細..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="bg-transparent border-none outline-none text-[13px] w-full" />
                                 </div>
 
-                                {/* Top Control: Dropdown */}
                                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
                                     <div className="md:hidden flex bg-slate-200/50 p-1 rounded-xl w-full">
                                         <button onClick={() => setActiveCardTab('EVA')} className={`flex-1 py-2.5 rounded-lg text-xs font-semibold transition-all flex justify-center items-center gap-1 ${activeCardTab === 'EVA' ? 'bg-white text-emerald-700 shadow-sm' : 'text-slate-500'}`}><i className="fa-solid fa-plane"></i> 長榮卡</button>
@@ -1001,8 +999,6 @@
                                 </div>
 
                                 <div className="bg-white rounded-[24px] border border-slate-200 shadow-[0_8px_30px_rgba(0,0,0,0.03)] overflow-hidden">
-                                    
-                                    {/* Card Header */}
                                     <div className="p-6 md:p-8 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 bg-white relative">
                                         <div className={`absolute top-0 left-0 w-full h-1.5 ${activeCardTab === 'EVA' ? 'bg-emerald-500' : 'bg-teal-500'}`}></div>
                                         <div className="w-full md:w-auto">
@@ -1013,7 +1009,6 @@
                                             </div>
                                             <h3 className="text-2xl font-bold text-slate-800 tracking-tight">{selectedPeriod}</h3>
                                             
-                                            {/* 亞萬進度條 */}
                                             {activeCardTab === 'AM' && (
                                                 <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 w-full md:w-80 mt-4">
                                                     <div className="flex justify-between text-[11px] font-semibold text-slate-500 mb-2">
@@ -1033,7 +1028,6 @@
                                         </div>
                                     </div>
 
-                                    {/* Table */}
                                     <div className="overflow-x-auto w-full">
                                         <table className="w-full text-left border-collapse min-w-[800px]">
                                             <thead className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
