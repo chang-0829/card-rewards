@@ -4,16 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>信用卡哩程回饋財報中心 V12</title>
-    <!-- React & ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS for Excel/CSV parsing -->
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
@@ -146,6 +141,10 @@
                 fetchDefaultSettings();
             }, []);
 
+            useEffect(() => {
+                localStorage.setItem('mileageSettingsV12_cache', JSON.stringify(settings));
+            }, [settings]);
+
             const handleSettingChange = (e) => {
                 const { name, value } = e.target;
                 setSettings(prev => ({ ...prev, [name]: name.includes('Rate') || name.includes('Cap') || name === 'billingDay' ? Number(value) : value }));
@@ -191,6 +190,7 @@
                 event.target.value = ''; 
             };
 
+            // ====== 核心修正：強化檔案解析引擎 ======
             const processFile = (file) => {
                 if (!file) return;
                 setFileName(file.name);
@@ -200,14 +200,99 @@
                         const bstr = evt.target.result;
                         const wb = XLSX.read(bstr, { type: 'binary', cellDates: true });
                         const ws = wb.Sheets[wb.SheetNames[0]];
-                        const data = XLSX.utils.sheet_to_json(ws, { raw: false, dateNF: 'yyyy-mm-dd' });
-                        const cleanData = data.map(row => {
+                        
+                        // 先將 Sheet 轉為 2D 陣列以便動態找尋實際標題列 (跳過前面無關的資訊)
+                        const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, dateNF: 'yyyy/mm/dd' });
+                        
+                        let headerRowIdx = -1;
+                        for (let i = 0; i < aoa.length; i++) {
+                            // 尋找包含「消費日」的列作為資料標題
+                            if (aoa[i] && aoa[i].some(cell => String(cell).includes('消費日'))) {
+                                headerRowIdx = i;
+                                break;
+                            }
+                        }
+                        
+                        if (headerRowIdx === -1) {
+                            alert("找不到包含「消費日」的標題列，請確認是否為國泰世華信用卡帳單格式！");
+                            return;
+                        }
+
+                        // 嘗試擷取已出帳帳單的年月，用來補齊只有「月/日」的舊日期格式
+                        let defaultYear = new Date().getFullYear();
+                        let statementMonth = new Date().getMonth() + 1;
+                        for (let i = 0; i < headerRowIdx; i++) {
+                            const rowStr = (aoa[i] || []).join('');
+                            // 找尋 "2025/12信用卡對帳單" 等字樣
+                            const match = rowStr.match(/(\d{4})\s*\/\s*(\d{1,2})\s*信用卡對帳單/);
+                            if (match) {
+                                defaultYear = parseInt(match[1], 10);
+                                statementMonth = parseInt(match[2], 10);
+                                break;
+                            }
+                        }
+
+                        const headers = aoa[headerRowIdx].map(h => String(h || '').trim());
+                        const dataRows = aoa.slice(headerRowIdx + 1);
+                        
+                        const cleanData = dataRows.map(rowArr => {
+                            const row = {};
+                            headers.forEach((h, idx) => {
+                                if (h) row[h] = rowArr[idx] !== undefined ? String(rowArr[idx]).trim() : '';
+                            });
+                            
                             const newRow = {};
-                            for(let key in row) newRow[key.trim()] = row[key];
+                            
+                            // === 修正 1：處理日期格式 (自動補齊年份並解決跨年) ===
+                            const fixDate = (dateStr) => {
+                                if (!dateStr || dateStr === '−' || dateStr === '-') return '';
+                                let d = String(dateStr).trim();
+                                // 如果格式僅為 mm/dd
+                                if (d.match(/^\d{2}\/\d{2}$/)) {
+                                    const txMonth = parseInt(d.substring(0, 2), 10);
+                                    let y = defaultYear;
+                                    // 如果消費月份比帳單月份大(如1月帳單含12月消費)，代表發生在去年
+                                    if (txMonth > statementMonth + 1) { 
+                                        y = defaultYear - 1;
+                                    }
+                                    return `${y}/${d}`;
+                                }
+                                // 如果已有年份，直接將 - 替換為 /
+                                return d.replace(/-/g, '/');
+                            };
+
+                            newRow['消費日'] = fixDate(row['消費日']);
+                            newRow['入帳起息日'] = fixDate(row['入帳起息日'] || row['消費日']);
+                            
+                            // === 修正 2：處理並正規化各種金額欄位 ===
+                            let rawAmount = row['金額'] || row['臺幣金額'] || row['新臺幣金額'] || '0';
+                            rawAmount = rawAmount.replace(/TWD/i, '').replace(/\$/g, '').replace(/,/g, '').trim();
+                            newRow['金額'] = rawAmount;
+                            
+                            // === 修正 3：統一交易說明欄位 ===
+                            newRow['交易說明'] = row['交易說明'] || row['消費店家'] || '';
+                            
+                            // === 修正 4：清理卡號雜亂字元 (如 ="4086" 或 4086 / 7265) ===
+                            let rawCard = row['卡號'] || row['卡號/行動末四碼'] || row['卡號末四碼'] || '';
+                            rawCard = rawCard.replace(/=/g, '').replace(/"/g, '').split('/')[0].trim();
+                            newRow['卡號'] = rawCard;
+                            
+                            // === 修正 5：清理消費國家 (過濾 TW / TWD) ===
+                            let rawCountry = row['消費國家'] || row['消費國家/幣別'] || 'TW';
+                            rawCountry = rawCountry.split('/')[0].trim();
+                            if(rawCountry === '−' || rawCountry === '-') rawCountry = 'TW';
+                            newRow['消費國家'] = rawCountry;
+                            
                             return newRow;
+                        }).filter(row => {
+                            const amt = parseFloat(row['金額']);
+                            // 過濾掉無效資料與「上期帳單總額」等非實際消費紀錄
+                            return !isNaN(amt) && row['消費日'] && row['交易說明'] && !row['交易說明'].includes('上期帳單總額');
                         });
+                        
                         setRawData(cleanData);
                     } catch (error) {
+                        console.error(error);
                         alert("檔案解析失敗，請確保為 XLSX/CSV 格式。");
                     }
                 };
@@ -507,29 +592,11 @@
                 const physicals = Array.from(selectedPhysical);
                 const onlines = unknownOverseasTxs.filter(tx => !selectedPhysical.has(tx));
                 
-                setSettings(prev => {
-                    const newBonusRules = [...prev.evaBonusRules];
-                    physicals.forEach(desc => {
-                        if (!newBonusRules.some(r => r.keyword === desc)) {
-                            // 海外實體：寫入加碼名單，並設定地區為 OVERSEAS
-                            newBonusRules.push({ id: crypto.randomUUID(), keyword: desc, location: 'OVERSEAS', startDate: '', endDate: '', note: '自動加入: 海外實體' });
-                        }
-                    });
-            
-                    const newBaseRules = [...prev.evaBaseRules];
-                    onlines.forEach(desc => {
-                        if (!newBaseRules.some(r => r.keyword === desc)) {
-                            // 海外線上：寫入強制一般消費，避免下次重複詢問
-                            newBaseRules.push({ id: crypto.randomUUID(), keyword: desc, location: 'OVERSEAS', startDate: '', endDate: '', note: '自動加入: 海外線上' });
-                        }
-                    });
-            
-                    return {
-                        ...prev,
-                        evaBonusRules: newBonusRules,
-                        evaBaseRules: newBaseRules
-                    };
-                });
+                setSettings(prev => ({
+                    ...prev,
+                    evaOverseasPhysical: [...new Set([...(prev.evaOverseasPhysical || []), ...physicals])],
+                    evaOverseasOnline: [...new Set([...(prev.evaOverseasOnline || []), ...onlines])]
+                }));
                 
                 setUnknownOverseasTxs([]); 
                 setSelectedPhysical(new Set());
