@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>全家 CUBE 卡折抵 4% 助手</title>
+    <title>全家 CUBE卡 折抵助手</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Premium Icons -->
@@ -11,34 +11,40 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
         
-        body {
+        /* 🚀 阻斷 iPhone 系統層級的上下左右視窗橡皮筋回彈 (Anti-Bounce) */
+        html, body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: fixed; /* 鎖定底層視區，杜絕整體回彈 */
+            overscroll-behavior: none; /* 禁用預設滾動鏈 */
             font-family: 'Noto Sans TC', sans-serif;
             -webkit-tap-highlight-color: transparent;
-            overflow: hidden; /* 防止整個瀏覽器視窗滾動，完美固定頁首頁尾 */
         }
 
-        /* 隱藏原生滾動條，讓 App 感覺更純粹 */
+        /* 隱藏原生滾動條，確保介面高雅極簡 */
         ::-webkit-scrollbar {
             display: none;
         }
 
-        .safe-bottom {
-            padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+        /* 🚀 底部選單安全高度自適應：基礎高度 + iOS 安全區域底距 */
+        .bottom-nav-container {
+            height: calc(4rem + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
-        /* 🚀 徹底解決 iOS 與 Android 日期欄位破圖/高度跑版問題 */
+        /* 🚀 iOS Safari 原生日期欄位樣式重置 (徹底解決高度擠壓/破圖) */
         input[type="date"] {
             appearance: none;
             -webkit-appearance: none;
             position: relative;
             display: flex;
             align-items: center;
-            justify-content: flex-start;
             box-sizing: border-box;
             background-color: #f8fafc; /* bg-slate-50 */
         }
 
-        /* 專門修復 iOS Safari 中日期文字被往下擠壓不置中的問題 */
+        /* 修正 Safari 日期文字偏下問題 */
         input[type="date"]::-webkit-date-and-time-value {
             text-align: left;
             min-height: 1.5em;
@@ -47,7 +53,7 @@
             padding: 0;
         }
 
-        /* 美化或隱藏原生行事曆小圖示，使其排版完全一體化 */
+        /* 隱藏日曆原生醜陋圖示，使用 Tailwind 排版 */
         input[type="date"]::-webkit-calendar-picker-indicator {
             background-color: transparent;
             color: transparent;
@@ -61,30 +67,24 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 flex justify-center h-screen overflow-hidden">
+<body class="bg-slate-100 flex justify-center items-center">
 
-    <!-- 手機殼層容器 (鎖定高度 100% 滿版，頁首頁尾不隨畫面捲動) -->
+    <!-- 手機殼層容器 (利用 Flex 佈局垂直分割：頁首 ➔ 滾動區 ➔ 頁尾，確保各部件恆定不跑版) -->
     <div class="w-full max-w-md bg-slate-50 flex flex-col relative h-full overflow-hidden shadow-2xl">
         
-        <!-- HEADER (絕對固定於最頂端，整合右上角月份切換) -->
-        <header class="bg-gradient-to-r from-emerald-700 to-green-600 text-white shadow-md pt-4 pb-3.5 px-4 flex justify-between items-center shrink-0 z-50">
-            <div class="flex items-center space-x-2.5">
-                <div class="w-8.5 h-8.5 rounded-full bg-white/15 flex items-center justify-center">
-                    <i class="fa-solid fa-tree text-green-300 text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="text-sm font-bold tracking-wide">全家 CUBE 折抵助手</h1>
-                    <p class="text-[9px] text-green-100 opacity-80">馬上折 4% 本機快取版</p>
-                </div>
+        <!-- HEADER (固定於最頂部，無 Icon / 無副標題 / 右側下拉選單僅有純日期) -->
+        <header class="bg-gradient-to-r from-emerald-700 to-green-600 text-white shadow-md py-4 px-4 flex justify-between items-center shrink-0 z-50">
+            <div>
+                <h1 class="text-base font-bold tracking-wide">全家 CUBE卡 折抵助手</h1>
             </div>
             
-            <!-- 右上角月份切換選單 -->
-            <div class="relative min-w-[125px]">
+            <!-- 右上角月份切換選單 (僅保留純日期) -->
+            <div class="relative min-w-[110px]">
                 <select id="headerMonthSelect" onchange="changeActiveMonth(parseInt(this.value))" 
                     class="w-full bg-emerald-800/60 text-white border border-white/20 rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-green-300 appearance-none cursor-pointer">
-                    <option value="1" class="text-slate-800 font-semibold">首月 5/27~6/30</option>
-                    <option value="2" class="text-slate-800 font-semibold">次月 7/1~7/31</option>
-                    <option value="3" class="text-slate-800 font-semibold">尾月 8/1~8/31</option>
+                    <option value="1" class="text-slate-800 font-semibold">5/27~6/30</option>
+                    <option value="2" class="text-slate-800 font-semibold">7/1~7/31</option>
+                    <option value="3" class="text-slate-800 font-semibold">8/1~8/31</option>
                 </select>
                 <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-emerald-200">
                     <i class="fa-solid fa-chevron-down text-[10px]"></i>
@@ -92,8 +92,8 @@
             </div>
         </header>
 
-        <!-- MAIN CONTENT (唯一可垂直捲動的區域) -->
-        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-24">
+        <!-- MAIN CONTENT (可垂直滾動，配置 overscroll-behavior-y: contain 杜絕滾動穿透) -->
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-6 overscroll-behavior-y-contain">
 
             <!-- ================= VIEW 1: 新增記帳 (RECORD FORM) ================= -->
             <section id="view-record" class="space-y-4">
@@ -107,7 +107,7 @@
 
                     <form id="recordForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
                         
-                        <!-- 欄位 1: 消費日期 (使用優化過之 date 設定) -->
+                        <!-- 欄位 1: 消費日期 -->
                         <div>
                             <label class="block text-xs font-bold text-slate-500 mb-1.5">消費日期</label>
                             <input type="date" id="formDate" required 
@@ -181,7 +181,7 @@
                     </form>
                 </div>
 
-                <!-- 破關提示卡片 (修改完標題) -->
+                <!-- 破關提示卡片 (簡化標題) -->
                 <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-100/50 space-y-2">
                     <h3 class="text-xs font-bold text-emerald-800 flex items-center space-x-1.5">
                         <i class="fa-solid fa-circle-info"></i>
@@ -199,7 +199,7 @@
                 <!-- 累計回饋進度狀態 -->
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
                     <div class="flex items-center justify-between">
-                        <h3 class="text-xs font-bold text-slate-500" id="dashMonthTitle">當月已獲加碼小樹點 (上限 100 點)</h3>
+                        <h3 class="text-xs font-bold text-slate-500" id="dashMonthTitle">已獲加碼點數 (上限 100 點)</h3>
                         <span class="text-sm font-black text-emerald-600" id="dashProgressLabel">0 / 100 點</span>
                     </div>
 
@@ -279,7 +279,7 @@
                     </div>
                 </div>
 
-                <!-- 活動快速指南 -->
+                <!-- 活動快速指南 (粗體字修復) -->
                 <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
                     <h3 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
                         <i class="fa-solid fa-circle-info text-slate-500"></i>
@@ -288,11 +288,11 @@
                     <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
                         <div>
                             <span class="font-bold text-slate-800 block mb-0.5">📌 回饋上限</span>
-                            <span>每個活動區間（首/次/尾月）上限 **100 點** 小樹點，整檔活動最高 **300 點**。</span>
+                            <span>每個活動區間（5/27~6/30、7/1~7/31、8/1~8/31）上限 <strong>100 點</strong> 小樹點，整檔活動最高 <strong>300 點</strong>。</span>
                         </div>
                         <div>
                             <span class="font-bold text-slate-800 block mb-0.5">📌 發放時間</span>
-                            <span>加碼 4% 回饋之點數預計於 **2026/11/1** 前發放至 CUBE 卡正卡。</span>
+                            <span>加碼 4% 回饋之點數預計於 <strong>2026/11/1</strong> 前發放至 CUBE 卡正卡。</span>
                         </div>
                         <div>
                             <span class="font-bold text-slate-800 block mb-0.5">📌 排外消費 (無回饋)</span>
@@ -320,20 +320,20 @@
             </div>
         </div>
 
-        <!-- 擬真 APP 底部導覽列 (絕對定位於最底部) -->
-        <nav class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 flex justify-around items-center pt-2 safe-bottom z-40 shadow-lg shrink-0">
-            <button onclick="navigateTo('record')" id="nav-record" class="flex flex-col items-center flex-1 py-1 text-emerald-600 transition-colors">
+        <!-- 擬真 APP 底部導覽列 (加入 bottom-nav-container 確保選單高度與 iOS 安全底邊完美融合) -->
+        <nav class="bottom-nav-container bg-white border-t border-slate-200 flex justify-around items-center pt-2 shrink-0 z-40 shadow-lg">
+            <button onclick="navigateTo('record')" id="nav-record" class="flex flex-col items-center justify-center flex-1 py-1 text-emerald-600 transition-colors h-full">
                 <i class="fa-solid fa-pen-to-square text-lg"></i>
                 <span class="text-[9px] mt-1 font-bold">新增記帳</span>
             </button>
-            <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="flex flex-col items-center flex-1 py-1 text-slate-400 transition-colors">
+            <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 transition-colors h-full">
                 <div class="relative">
                     <i class="fa-solid fa-chart-simple text-lg"></i>
                     <span id="nav-badge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-[8px] text-white font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center hidden">0</span>
                 </div>
                 <span class="text-[9px] mt-1 font-bold">回饋看板</span>
             </button>
-            <button onclick="navigateTo('settings')" id="nav-settings" class="flex flex-col items-center flex-1 py-1 text-slate-400 transition-colors">
+            <button onclick="navigateTo('settings')" id="nav-settings" class="flex flex-col items-center justify-center flex-1 py-1 text-slate-400 transition-colors h-full">
                 <i class="fa-solid fa-sliders text-lg"></i>
                 <span class="text-[9px] mt-1 font-bold">設定備份</span>
             </button>
@@ -348,9 +348,9 @@
 
         // 活動區間設定 (基準年 2026)
         const campaigns = {
-            1: { name: '首月', label: '首月 5/27~6/30', start: '2026-05-27', end: '2026-06-30' },
-            2: { name: '次月', label: '次月 7/1~7/31', start: '2026-07-01', end: '2026-07-31' },
-            3: { name: '尾月', label: '尾月 8/1~8/31', start: '2026-08-01', end: '2026-08-31' }
+            1: { name: '5/27~6/30', label: '5/27~6/30', start: '2026-05-27', end: '2026-06-30' },
+            2: { name: '7/1~7/31', label: '7/1~7/31', start: '2026-07-01', end: '2026-07-31' },
+            3: { name: '8/1~8/31', label: '8/1~8/31', start: '2026-08-01', end: '2026-08-31' }
         };
 
         // App 啟動初始化
@@ -475,9 +475,9 @@
             ['record', 'dashboard', 'settings'].forEach(v => {
                 const navBtn = document.getElementById(`nav-${v}`);
                 if (v === viewName) {
-                    navBtn.className = "flex flex-col items-center flex-1 py-1 text-emerald-600 transition-colors";
+                    navBtn.className = "flex flex-col items-center justify-center flex-1 py-1 text-emerald-600 transition-colors h-full";
                 } else {
-                    navBtn.className = "flex flex-col items-center flex-1 py-1 text-slate-400 transition-colors";
+                    navBtn.className = "flex flex-col items-center justify-center flex-1 py-1 text-slate-400 transition-colors h-full";
                 }
             });
 
@@ -608,7 +608,7 @@
             document.getElementById('dashProgressBar').style.width = `${progressPercent}%`;
 
             // 更新儀表板月份標題
-            document.getElementById('dashMonthTitle').innerText = `${campaigns[currentMonth].name}已獲加碼點數 (上限 100 點)`;
+            document.getElementById('dashMonthTitle').innerText = `${campaigns[currentMonth].name} 已獲加碼點數`;
 
             // 渲染消費列表
             const container = document.getElementById('transactionContainer');
