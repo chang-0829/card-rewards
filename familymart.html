@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>全家 CUBE 卡折抵 4% 助手</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden; /* 防止整個瀏覽器視窗滾動，完美固定頁首頁尾 */
+        }
+
+        /* 隱藏原生滾動條，讓 App 感覺更純粹 */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        .safe-bottom {
+            padding-bottom: calc(env(safe-area-inset-bottom) + 0.5rem);
+        }
+
+        /* 🚀 徹底解決 iOS 與 Android 日期欄位破圖/高度跑版問題 */
+        input[type="date"] {
+            appearance: none;
+            -webkit-appearance: none;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            box-sizing: border-box;
+            background-color: #f8fafc; /* bg-slate-50 */
+        }
+
+        /* 專門修復 iOS Safari 中日期文字被往下擠壓不置中的問題 */
+        input[type="date"]::-webkit-date-and-time-value {
+            text-align: left;
+            min-height: 1.5em;
+            line-height: 1.5em;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 美化或隱藏原生行事曆小圖示，使其排版完全一體化 */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background-color: transparent;
+            color: transparent;
+            cursor: pointer;
+            height: 100%;
+            position: absolute;
+            right: 12px;
+            top: 0;
+            width: 24px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 flex justify-center h-screen overflow-hidden">
+
+    <!-- 手機殼層容器 (鎖定高度 100% 滿版，頁首頁尾不隨畫面捲動) -->
+    <div class="w-full max-w-md bg-slate-50 flex flex-col relative h-full overflow-hidden shadow-2xl">
+        
+        <!-- HEADER (絕對固定於最頂端，整合右上角月份切換) -->
+        <header class="bg-gradient-to-r from-emerald-700 to-green-600 text-white shadow-md pt-4 pb-3.5 px-4 flex justify-between items-center shrink-0 z-50">
+            <div class="flex items-center space-x-2.5">
+                <div class="w-8.5 h-8.5 rounded-full bg-white/15 flex items-center justify-center">
+                    <i class="fa-solid fa-tree text-green-300 text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold tracking-wide">全家 CUBE 折抵助手</h1>
+                    <p class="text-[9px] text-green-100 opacity-80">馬上折 4% 本機快取版</p>
+                </div>
+            </div>
+            
+            <!-- 右上角月份切換選單 -->
+            <div class="relative min-w-[125px]">
+                <select id="headerMonthSelect" onchange="changeActiveMonth(parseInt(this.value))" 
+                    class="w-full bg-emerald-800/60 text-white border border-white/20 rounded-xl pl-3 pr-8 py-1.5 text-xs font-bold focus:outline-none focus:ring-2 focus:ring-green-300 appearance-none cursor-pointer">
+                    <option value="1" class="text-slate-800 font-semibold">首月 5/27~6/30</option>
+                    <option value="2" class="text-slate-800 font-semibold">次月 7/1~7/31</option>
+                    <option value="3" class="text-slate-800 font-semibold">尾月 8/1~8/31</option>
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-emerald-200">
+                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT (唯一可垂直捲動的區域) -->
+        <main class="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-24">
+
+            <!-- ================= VIEW 1: 新增記帳 (RECORD FORM) ================= -->
+            <section id="view-record" class="space-y-4">
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                    <div class="flex items-center space-x-2 mb-4">
+                        <div class="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                            <i class="fa-solid fa-pen-to-square text-sm"></i>
+                        </div>
+                        <h2 class="font-bold text-slate-800 text-base">新增全家消費紀錄</h2>
+                    </div>
+
+                    <form id="recordForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                        
+                        <!-- 欄位 1: 消費日期 (使用優化過之 date 設定) -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5">消費日期</label>
+                            <input type="date" id="formDate" required 
+                                class="w-full h-12 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white focus:outline-none" />
+                        </div>
+
+                        <!-- 欄位 2: 支付工具 -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1.5">支付工具 (影響原方案額外回饋)</label>
+                            <div class="relative">
+                                <select id="formPayment" class="w-full h-12 bg-slate-50 border border-slate-200 rounded-xl px-4 pr-10 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white focus:outline-none appearance-none">
+                                    <option value="famipay">My FamiPay (享原「集精選」2% 回饋)</option>
+                                    <option value="pluspay">全盈+PAY (僅 4% 加碼，無集精選 2%)</option>
+                                </select>
+                                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                                    <i class="fa-solid fa-chevron-down text-xs"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 點數折抵與實刷自付額 -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- 點數折抵 -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1.5 flex justify-between">
+                                    <span>小樹點折抵</span>
+                                    <button type="button" onclick="setFormDeductToOne()" class="text-[10px] text-emerald-600 font-bold hover:underline">一鍵折 1 點</button>
+                                </label>
+                                <div class="flex rounded-xl shadow-2xs border border-slate-200 overflow-hidden h-12">
+                                    <button type="button" onclick="adjustFormDeduct(-1)" class="bg-slate-100 hover:bg-slate-200 px-4 text-slate-600 font-bold">-</button>
+                                    <input type="number" id="formDeduct" value="1" min="0" required
+                                        class="w-full text-center border-0 text-sm font-bold text-slate-800 focus:ring-0 focus:outline-none bg-white" />
+                                    <button type="button" onclick="adjustFormDeduct(1)" class="bg-slate-100 hover:bg-slate-200 px-4 text-slate-600 font-bold">+</button>
+                                </div>
+                            </div>
+
+                            <!-- 實刷自付額 -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1.5">CUBE卡自付額 (元)</label>
+                                <input type="number" id="formSelfPay" placeholder="實際刷卡自付款" required oninput="updateFormLiveStats()"
+                                    class="w-full h-12 bg-slate-50 border border-slate-200 rounded-xl px-4 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:bg-white focus:outline-none" />
+                            </div>
+                        </div>
+
+                        <!-- 金額低於 13 元四捨五入警示 -->
+                        <div id="formWarning" class="hidden p-3 bg-red-50 text-red-700 rounded-xl text-xs flex items-center space-x-1.5 border border-red-100">
+                            <i class="fa-solid fa-circle-exclamation text-red-500"></i>
+                            <span>這筆消費總額低於 13 元，加碼回饋將四捨五入為 0 點！</span>
+                        </div>
+
+                        <!-- 預估回饋即時展示 -->
+                        <div class="bg-slate-50 rounded-xl p-3.5 text-xs border border-slate-150 space-y-2">
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">當筆消費總額 (折抵+自付)：</span>
+                                <span class="font-bold text-slate-700" id="formTotalVal">$0 元</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">預估加碼 4% 回饋 (馬上折)：</span>
+                                <span class="font-bold text-emerald-600" id="formReward4Val">0 點</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">預估集精選 2% (限 FamiPay)：</span>
+                                <span class="font-bold text-sky-600" id="formReward2Val">0 點</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold h-12 rounded-xl transition-all shadow-sm flex items-center justify-center space-x-2 text-sm">
+                            <i class="fa-solid fa-check"></i>
+                            <span>記入帳本</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 破關提示卡片 (修改完標題) -->
+                <div class="bg-emerald-50 rounded-2xl p-4 border border-emerald-100/50 space-y-2">
+                    <h3 class="text-xs font-bold text-emerald-800 flex items-center space-x-1.5">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>記帳小技巧</span>
+                    </h3>
+                    <p class="text-[11px] text-emerald-700 leading-relaxed">
+                        只要折抵 <strong>1 點小樹點</strong>，整筆交易不管是刷卡還是折抵的部分都能拿到完整的 <strong>4% 回饋</strong>。建議每一筆都固定折 1 點，發揮點數最大效益！
+                    </p>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 2: 看板與明細 (DASHBOARD & LIST) ================= -->
+            <section id="view-dashboard" class="space-y-4 hidden">
+                
+                <!-- 累計回饋進度狀態 -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-slate-500" id="dashMonthTitle">當月已獲加碼小樹點 (上限 100 點)</h3>
+                        <span class="text-sm font-black text-emerald-600" id="dashProgressLabel">0 / 100 點</span>
+                    </div>
+
+                    <!-- 進度條 -->
+                    <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                        <div id="dashProgressBar" class="bg-gradient-to-r from-emerald-500 to-green-500 h-3 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+
+                    <!-- 累計核心數據一覽 -->
+                    <div class="grid grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+                        <div>
+                            <span class="text-[10px] text-slate-400 font-bold block mb-0.5">累積消費金額</span>
+                            <span class="font-bold text-slate-800 text-sm" id="dashTotalSpend">$0 元</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 font-bold block mb-0.5">最佳化剩餘額度</span>
+                            <span class="font-bold text-amber-600 text-sm" id="dashRemainingQuota">$2,500 元</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 font-bold block mb-0.5">累計折抵點數</span>
+                            <span class="font-bold text-slate-600 text-sm" id="dashTotalDeduct">0 點</span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 font-bold block mb-0.5">集精選預估回饋</span>
+                            <span class="font-bold text-sky-600 text-sm" id="dashTotalFami">0 點</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 明細列表 -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                            <i class="fa-solid fa-receipt text-slate-400"></i>
+                            <span>本月消費明細</span>
+                        </h3>
+                        <button onclick="promptClearTransactions()" class="text-xs text-red-500 hover:text-red-700 font-semibold transition-colors flex items-center space-x-1">
+                            <i class="fa-regular fa-trash-can"></i>
+                            <span>清空當月</span>
+                        </button>
+                    </div>
+
+                    <!-- 明細清單容器 -->
+                    <div id="transactionContainer" class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                        <!-- 動態載入 -->
+                    </div>
+
+                    <!-- 空白狀態提示 -->
+                    <div id="emptyDashboardState" class="hidden py-10 text-center text-slate-400 space-y-2">
+                        <i class="fa-solid fa-face-smile text-3xl opacity-35"></i>
+                        <p class="text-xs">這個月目前沒有任何記帳紀錄喔！</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 3: 資料管理與說明 (BACKUP & GUIDE) ================= -->
+            <section id="view-settings" class="space-y-4 hidden">
+                
+                <!-- 備份區塊 -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                        <i class="fa-solid fa-database text-emerald-600"></i>
+                        <span>資料導出與復原</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        您的資料預設已儲存在您的手機緩存中。若需要更換裝置，可以手動複製下方備份代碼保存，隨時貼回即可進行復原。
+                    </p>
+                    <textarea id="backupText" class="w-full h-24 border border-slate-200 rounded-xl p-3 font-mono text-[10px] bg-slate-50 focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-700" placeholder="點擊下方按鈕可生成您的專屬資料代碼..."></textarea>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="handleGenerateBackup()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-2.5 rounded-xl text-xs transition-colors">
+                            <i class="fa-solid fa-copy mr-1"></i> 生成並複製
+                        </button>
+                        <button onclick="handleImportBackup()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors">
+                            <i class="fa-solid fa-file-import mr-1"></i> 導入備份
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 活動快速指南 -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
+                    <h3 class="font-bold text-slate-800 text-sm flex items-center space-x-1.5">
+                        <i class="fa-solid fa-circle-info text-slate-500"></i>
+                        <span>活動快速指南</span>
+                    </h3>
+                    <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+                        <div>
+                            <span class="font-bold text-slate-800 block mb-0.5">📌 回饋上限</span>
+                            <span>每個活動區間（首/次/尾月）上限 **100 點** 小樹點，整檔活動最高 **300 點**。</span>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 block mb-0.5">📌 發放時間</span>
+                            <span>加碼 4% 回饋之點數預計於 **2026/11/1** 前發放至 CUBE 卡正卡。</span>
+                        </div>
+                        <div>
+                            <span class="font-bold text-slate-800 block mb-0.5">📌 排外消費 (無回饋)</span>
+                            <span>菸品、代收繳費（水電瓦斯、學雜費、信用卡費）、網購取貨付款、Fami錢包儲值、儲值卡片、點數卡、郵票。</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- 客製化確認/通知視窗 (替代原生破壞體驗的 Alert) -->
+        <div id="alertModal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center px-6 hidden opacity-0 transition-opacity duration-200">
+            <div class="bg-white rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl transform scale-95 transition-transform duration-200">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-8 h-8 rounded-full flex items-center justify-center" id="alertIcon">
+                        <!-- 動態載入 -->
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm" id="alertTitle">提示</h4>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed" id="alertMsg">內容</p>
+                <div class="flex space-x-2 justify-end" id="alertButtons">
+                    <!-- 動態按鈕 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 擬真 APP 底部導覽列 (絕對定位於最底部) -->
+        <nav class="absolute bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 flex justify-around items-center pt-2 safe-bottom z-40 shadow-lg shrink-0">
+            <button onclick="navigateTo('record')" id="nav-record" class="flex flex-col items-center flex-1 py-1 text-emerald-600 transition-colors">
+                <i class="fa-solid fa-pen-to-square text-lg"></i>
+                <span class="text-[9px] mt-1 font-bold">新增記帳</span>
+            </button>
+            <button onclick="navigateTo('dashboard')" id="nav-dashboard" class="flex flex-col items-center flex-1 py-1 text-slate-400 transition-colors">
+                <div class="relative">
+                    <i class="fa-solid fa-chart-simple text-lg"></i>
+                    <span id="nav-badge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-[8px] text-white font-bold w-3.5 h-3.5 rounded-full flex items-center justify-center hidden">0</span>
+                </div>
+                <span class="text-[9px] mt-1 font-bold">回饋看板</span>
+            </button>
+            <button onclick="navigateTo('settings')" id="nav-settings" class="flex flex-col items-center flex-1 py-1 text-slate-400 transition-colors">
+                <i class="fa-solid fa-sliders text-lg"></i>
+                <span class="text-[9px] mt-1 font-bold">設定備份</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <script>
+        // App 全域狀態
+        let currentMonth = 1; // 1 = 首月, 2 = 次月, 3 = 尾月
+        let records = [];
+
+        // 活動區間設定 (基準年 2026)
+        const campaigns = {
+            1: { name: '首月', label: '首月 5/27~6/30', start: '2026-05-27', end: '2026-06-30' },
+            2: { name: '次月', label: '次月 7/1~7/31', start: '2026-07-01', end: '2026-07-31' },
+            3: { name: '尾月', label: '尾月 8/1~8/31', start: '2026-08-01', end: '2026-08-31' }
+        };
+
+        // App 啟動初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            // 從 LocalStorage 本機快取載入歷史資料 (若無，則保持乾淨空白)
+            const saved = localStorage.getItem('cube_fami_app_records');
+            if (saved) {
+                try {
+                    records = JSON.parse(saved);
+                } catch (e) {
+                    records = [];
+                }
+            } else {
+                records = []; 
+            }
+
+            // 依據目前系統日期自動偵測切換至符合的月份
+            detectAndSetActiveMonth();
+
+            // 設定預設輸入表單日期限制
+            setCurrentFormDateDefault();
+            navigateTo('record'); // 預設直接顯示記帳表單
+            setupFormListeners();
+            updateGlobalUI();
+        });
+
+        // 偵測日期並預先選擇活動區間月份
+        function detectAndSetActiveMonth() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (todayStr >= campaigns[2].start && todayStr <= campaigns[2].end) {
+                currentMonth = 2;
+            } else if (todayStr >= campaigns[3].start && todayStr <= campaigns[3].end) {
+                currentMonth = 3;
+            } else {
+                currentMonth = 1; // 預設首月
+            }
+            document.getElementById('headerMonthSelect').value = currentMonth;
+        }
+
+        // 設定表單日期限制
+        function setCurrentFormDateDefault() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const activeRange = campaigns[currentMonth];
+            const dateInput = document.getElementById('formDate');
+
+            dateInput.min = activeRange.start;
+            dateInput.max = activeRange.end;
+
+            // 若目前實體日期在當前選擇月份範圍內，則帶入實體日期；否則帶入該範圍第一天
+            if (todayStr >= activeRange.start && todayStr <= activeRange.end) {
+                dateInput.value = todayStr;
+            } else {
+                dateInput.value = activeRange.start;
+            }
+        }
+
+        // 表單即時試算監聽器
+        function setupFormListeners() {
+            const deductIn = document.getElementById('formDeduct');
+            const selfPayIn = document.getElementById('formSelfPay');
+            const paymentSel = document.getElementById('formPayment');
+
+            const recalculate = () => {
+                const deduct = parseInt(deductIn.value) || 0;
+                const selfPay = parseInt(selfPayIn.value) || 0;
+                const total = deduct + selfPay;
+
+                document.getElementById('formTotalVal').innerText = `$${total} 元`;
+
+                // 4% 回饋四捨五入計算
+                const reward4 = Math.round(total * 0.04);
+                document.getElementById('formReward4Val').innerText = `${reward4} 點`;
+
+                // 原 2% 集精選回饋計算
+                const reward2 = (paymentSel.value === 'famipay') ? Math.round(selfPay * 0.02) : 0;
+                document.getElementById('formReward2Val').innerText = `${reward2} 點`;
+
+                // 13元以下防呆檢驗
+                const warningBox = document.getElementById('formWarning');
+                if (deduct > 0 && total < 13 && total > 0) {
+                    warningBox.classList.remove('hidden');
+                } else {
+                    warningBox.classList.add('hidden');
+                }
+            };
+
+            deductIn.addEventListener('input', recalculate);
+            selfPayIn.addEventListener('input', recalculate);
+            paymentSel.addEventListener('change', recalculate);
+        }
+
+        function updateFormLiveStats() {
+            // 即時計算表單回饋數據
+        }
+
+        // 小樹點增減控制鈕
+        function adjustFormDeduct(val) {
+            const el = document.getElementById('formDeduct');
+            let v = parseInt(el.value) || 0;
+            v = Math.max(0, v + val);
+            el.value = v;
+            el.dispatchEvent(new Event('input'));
+        }
+
+        function setFormDeductToOne() {
+            const el = document.getElementById('formDeduct');
+            el.value = 1;
+            el.dispatchEvent(new Event('input'));
+        }
+
+        // APP 切換分頁路由邏輯
+        function navigateTo(viewName) {
+            // 隱藏全部頁面
+            document.getElementById('view-record').classList.add('hidden');
+            document.getElementById('view-dashboard').classList.add('hidden');
+            document.getElementById('view-settings').classList.add('hidden');
+
+            // 展開指定分頁
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+
+            // 調整底部 Tab Bar 高亮
+            ['record', 'dashboard', 'settings'].forEach(v => {
+                const navBtn = document.getElementById(`nav-${v}`);
+                if (v === viewName) {
+                    navBtn.className = "flex flex-col items-center flex-1 py-1 text-emerald-600 transition-colors";
+                } else {
+                    navBtn.className = "flex flex-col items-center flex-1 py-1 text-slate-400 transition-colors";
+                }
+            });
+
+            // 回饋看板開啟時即時重新繪製
+            if (viewName === 'dashboard') {
+                renderDashboard();
+            }
+        }
+
+        // 頁首右上角月份切換回調函數
+        function changeActiveMonth(mNum) {
+            currentMonth = mNum;
+
+            // 同步表單日期預設範圍
+            setCurrentFormDateDefault();
+
+            // 若當前在看板分頁則直接重繪
+            if (!document.getElementById('view-dashboard').classList.contains('hidden')) {
+                renderDashboard();
+            }
+            updateGlobalUI();
+        }
+
+        // 本機快取持久化
+        function saveToStorage() {
+            localStorage.setItem('cube_fami_app_records', JSON.stringify(records));
+            updateGlobalUI();
+        }
+
+        // 更新回饋看板入口的小紅點 Badge 數據
+        function updateGlobalUI() {
+            const badge = document.getElementById('nav-badge');
+            const currentMonthTransactionsCount = records.filter(t => t.month === currentMonth).length;
+            
+            if (currentMonthTransactionsCount > 0) {
+                badge.innerText = currentMonthTransactionsCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        // 記入帳本資料儲存事件
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const dateStr = document.getElementById('formDate').value;
+            const paymentStr = document.getElementById('formPayment').value;
+            const deduct = parseInt(document.getElementById('formDeduct').value) || 0;
+            const selfPay = parseInt(document.getElementById('formSelfPay').value) || 0;
+
+            if (deduct === 0) {
+                showAlert('❗特別提醒', '活動規定消費該筆<strong>必須使用小樹點進行折抵</strong>，若不折抵無法獲得 4% 加碼！建議您至少折抵 1 點。', 'warning');
+                return;
+            }
+
+            // 判斷該筆日期屬於哪個活動區間
+            let targetMonthIndex = 1;
+            if (dateStr >= campaigns[1].start && dateStr <= campaigns[1].end) targetMonthIndex = 1;
+            else if (dateStr >= campaigns[2].start && dateStr <= campaigns[2].end) targetMonthIndex = 2;
+            else if (dateStr >= campaigns[3].start && dateStr <= campaigns[3].end) targetMonthIndex = 3;
+            else {
+                showAlert('⚠️ 日期超出範圍', '選定日期不在本活動（5/27 ~ 8/31）之間。', 'error');
+                return;
+            }
+
+            const item = {
+                id: Date.now(),
+                date: dateStr,
+                payment: paymentStr,
+                pointsDeducted: deduct,
+                selfPay: selfPay,
+                month: targetMonthIndex
+            };
+
+            // 寫入並儲存至本機
+            records.push(item);
+            saveToStorage();
+
+            // 重設表單金額
+            document.getElementById('formSelfPay').value = '';
+            document.getElementById('formDeduct').value = '1';
+            document.getElementById('formDeduct').dispatchEvent(new Event('input'));
+
+            // 自動對齊並切換到該月看板
+            document.getElementById('headerMonthSelect').value = targetMonthIndex;
+            changeActiveMonth(targetMonthIndex);
+            navigateTo('dashboard');
+            
+            showAlert('🎉 記入成功', '消費已成功儲存至本機快取。', 'success');
+        }
+
+        // 繪製回饋看板進度條及累積數據
+        function renderDashboard() {
+            const activeTrans = records.filter(t => t.month === currentMonth);
+            
+            let totalSpend = 0;
+            let totalDeduct = 0;
+            let earned4Percent = 0;
+            let estimatedFami = 0;
+
+            activeTrans.forEach(t => {
+                const total = t.pointsDeducted + t.selfPay;
+                totalSpend += total;
+                totalDeduct += t.pointsDeducted;
+
+                // 逐筆加碼4% (四捨五入)
+                earned4Percent += Math.round(total * 0.04);
+
+                // 原集精選2% (四捨五入)
+                if (t.payment === 'famipay') {
+                    estimatedFami += Math.round(t.selfPay * 0.02);
+                }
+            });
+
+            // 渲染統計卡片
+            document.getElementById('dashTotalSpend').innerText = `$${totalSpend} 元`;
+            document.getElementById('dashTotalDeduct').innerText = `${totalDeduct} 點`;
+            document.getElementById('dashTotalFami').innerText = `${estimatedFami} 點`;
+
+            // 回饋達標額度試算 (以100點上限回推，消費2500元封頂)
+            const remaining = Math.max(0, 2500 - totalSpend);
+            document.getElementById('dashRemainingQuota').innerText = `$${remaining} 元`;
+
+            // 當月累計上限進度
+            const progressPercent = Math.min(100, earned4Percent);
+            document.getElementById('dashProgressLabel').innerText = `${earned4Percent} / 100 點`;
+            document.getElementById('dashProgressBar').style.width = `${progressPercent}%`;
+
+            // 更新儀表板月份標題
+            document.getElementById('dashMonthTitle').innerText = `${campaigns[currentMonth].name}已獲加碼點數 (上限 100 點)`;
+
+            // 渲染消費列表
+            const container = document.getElementById('transactionContainer');
+            const emptyState = document.getElementById('emptyDashboardState');
+
+            container.innerHTML = '';
+
+            if (activeTrans.length === 0) {
+                emptyState.classList.remove('hidden');
+                container.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            container.classList.remove('hidden');
+
+            // 最新時間優先排序
+            const sorted = [...activeTrans].sort((a,b) => new Date(b.date) - new Date(a.date));
+
+            sorted.forEach(t => {
+                const total = t.pointsDeducted + t.selfPay;
+                const r4 = Math.round(total * 0.04);
+                const r2 = (t.payment === 'famipay') ? Math.round(t.selfPay * 0.02) : 0;
+                const isUnderValued = (t.pointsDeducted > 0 && total < 13);
+
+                const div = document.createElement('div');
+                div.className = `p-3 rounded-xl border flex justify-between items-center bg-slate-50/60 ${isUnderValued ? 'border-red-200 bg-red-50/20' : 'border-slate-150'}`;
+                div.innerHTML = `
+                    <div class="space-y-0.5">
+                        <div class="flex items-center space-x-1.5">
+                            <span class="text-[10px] font-mono text-slate-400 font-bold">${t.date.substring(5)}</span>
+                            <span class="text-[9px] px-1.5 py-0.2 rounded-full font-bold ${t.payment === 'famipay' ? 'bg-sky-100 text-sky-800' : 'bg-purple-100 text-purple-800'}">
+                                ${t.payment === 'famipay' ? 'FamiPay' : '全盈+PAY'}
+                            </span>
+                            ${isUnderValued ? '<span class="text-[9px] bg-red-100 text-red-700 px-1 font-bold rounded">被捨五入</span>' : ''}
+                        </div>
+                        <p class="text-xs text-slate-600">
+                            總價: <strong class="text-slate-800">$${total}</strong> (扣 ${t.pointsDeducted} / 刷 $${t.selfPay})
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-2.5">
+                        <div class="text-right">
+                            <div class="text-xs font-black text-emerald-600">+${r4} 點 <span class="text-[9px] text-slate-400 font-normal">(4%)</span></div>
+                            ${r2 > 0 ? `<div class="text-[10px] font-bold text-sky-600">+${r2} 點 <span class="text-[9px] text-slate-400 font-normal">(2%)</span></div>` : ''}
+                        </div>
+                        <button onclick="promptDeleteRecord(${t.id})" class="text-slate-300 hover:text-red-500 p-1.5 transition-colors">
+                            <i class="fa-regular fa-trash-can text-xs"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // 單筆明細刪除與本機快取同步
+        function promptDeleteRecord(id) {
+            showConfirm('確定要刪除這筆記帳紀錄嗎？此動作不可撤銷。', () => {
+                records = records.filter(r => r.id !== id);
+                saveToStorage();
+                renderDashboard();
+                closeAlert();
+            });
+        }
+
+        // 批次清空
+        function promptClearTransactions() {
+            showConfirm(`確定要將 ${campaigns[currentMonth].name} 的所有記帳紀錄清空嗎？`, () => {
+                records = records.filter(t => t.month !== currentMonth);
+                saveToStorage();
+                renderDashboard();
+                closeAlert();
+            });
+        }
+
+        // 替代瀏覽器 Alert 的高質感彈出視窗
+        function showAlert(title, message, type = 'success') {
+            const modal = document.getElementById('alertModal');
+            document.getElementById('alertTitle').innerText = title;
+            document.getElementById('alertMsg').innerHTML = message;
+
+            const iconEl = document.getElementById('alertIcon');
+            if (type === 'success') {
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-check text-emerald-600"></i>';
+                iconEl.className = "w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 text-base";
+            } else if (type === 'warning') {
+                iconEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-600"></i>';
+                iconEl.className = "w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 text-base";
+            } else {
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-600"></i>';
+                iconEl.className = "w-8 h-8 rounded-full bg-red-50 flex items-center justify-center text-red-600 text-base";
+            }
+
+            document.getElementById('alertButtons').innerHTML = `
+                <button onclick="closeAlert()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors">
+                    關閉
+                </button>
+            `;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        // 替代瀏覽器 Confirm
+        function showConfirm(message, confirmCallback) {
+            const modal = document.getElementById('alertModal');
+            document.getElementById('alertTitle').innerText = '確認動作';
+            document.getElementById('alertMsg').innerText = message;
+
+            const iconEl = document.getElementById('alertIcon');
+            iconEl.innerHTML = '<i class="fa-solid fa-circle-question text-amber-600"></i>';
+            iconEl.className = "w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600 text-base";
+
+            document.getElementById('alertButtons').innerHTML = `
+                <button onclick="closeAlert()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold px-4 py-2 rounded-xl text-xs transition-colors">
+                    取消
+                </button>
+                <button id="alertConfirmBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors">
+                    確認
+                </button>
+            `;
+
+            document.getElementById('alertConfirmBtn').onclick = confirmCallback;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                modal.querySelector('div').classList.remove('scale-95');
+                modal.querySelector('div').classList.add('scale-100');
+            }, 10);
+        }
+
+        function closeAlert() {
+            const modal = document.getElementById('alertModal');
+            modal.classList.add('opacity-0');
+            modal.querySelector('div').classList.add('scale-95');
+            modal.querySelector('div').classList.remove('scale-100');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        // 設定：備份與還原
+        function handleGenerateBackup() {
+            const code = btoa(encodeURIComponent(JSON.stringify(records)));
+            const txt = document.getElementById('backupText');
+            txt.value = code;
+            txt.select();
+
+            try {
+                document.execCommand('copy');
+                showAlert('📋 複製成功', '您的備份代碼已複製到剪貼簿，請妥善保存於記事本中！', 'success');
+            } catch (e) {
+                showAlert('備份碼已生成', '備份碼已成功產生！請手動全選下方框內的代碼進行複製保存。', 'success');
+            }
+        }
+
+        function handleImportBackup() {
+            const val = document.getElementById('backupText').value.trim();
+            if (!val) {
+                showAlert('導入失敗', '請在上方輸入框中貼上您先前的備份編碼。', 'error');
+                return;
+            }
+
+            try {
+                const decoded = decodeURIComponent(atob(val));
+                const parsed = JSON.parse(decoded);
+
+                if (Array.isArray(parsed)) {
+                    records = parsed;
+                    saveToStorage();
+                    navigateTo('dashboard');
+                    showAlert('🎉 導入成功', '資料已成功復原並寫入本機快取中。', 'success');
+                } else {
+                    showAlert('格式錯誤', '解碼代碼失敗，這不是正確的備份格式。', 'error');
+                }
+            } catch (e) {
+                showAlert('導入失敗', '無法成功解析此代碼，請確認代碼複製無缺漏。', 'error');
+            }
+        }
+    </script>
+</body>
+</html>
