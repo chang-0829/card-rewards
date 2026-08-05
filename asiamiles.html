@@ -3,219 +3,308 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>國泰亞萬鈦商卡回饋試算器</title>
+  <title>國泰亞萬鈦商卡 雙重活動記帳與回饋試算神器</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <!-- Vue 3 CDN -->
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <!-- Google Fonts: Noto Sans TC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     [v-cloak] { display: none; }
-    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    body { font-family: 'Noto Sans TC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
     .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+<body class="bg-[#f4f7f6] text-slate-800 min-h-screen">
   <div id="app" v-cloak class="pb-16">
-    <!-- 頂部導覽標頭 -->
-    <header class="bg-teal-900 text-white shadow-lg sticky top-0 z-30">
-      <div class="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-3">
-        <div class="flex items-center space-x-3">
-          <div class="bg-teal-700 p-2.5 rounded-xl shadow-inner border border-teal-500/30">
-            <i class="fa-solid fa-plane-departure text-2xl text-amber-300"></i>
-          </div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <h1 class="text-xl font-bold tracking-wide">亞萬鈦商卡 活動記帳器</h1>
-              <span class="bg-amber-400 text-teal-950 font-extrabold text-[11px] px-2 py-0.5 rounded-full uppercase shadow-sm">
-                鈦商卡專用
-              </span>
+    <!-- 頂部官方風格導覽列 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <!-- 國泰標誌與標題 -->
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-full bg-[#006564] flex items-center justify-center text-white shadow-sm">
+              <i class="fa-solid fa-plane text-sm"></i>
             </div>
-            <p class="text-xs text-teal-200 mt-0.5">活動A (9月滿額加碼) ✕ 活動B (8月壽星2倍特店加碼)</p>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="font-extrabold text-[#006564] text-lg tracking-tight">國泰航空</span>
+                <span class="text-xs text-slate-400">|</span>
+                <span class="text-sm font-bold text-slate-700">亞洲萬里通鈦商卡記帳器</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <!-- 卡片資訊標籤 -->
-        <div class="flex items-center space-x-2 text-xs bg-teal-950/70 border border-teal-700/60 px-3 py-2 rounded-xl text-teal-200">
-          <i class="fa-solid fa-cake-candles text-purple-300"></i>
-          <span>壽星月份：<strong class="text-white">8月</strong></span>
-          <span class="text-teal-500">|</span>
-          <span>一般消費：<strong class="text-white">$25/里</strong></span>
-        </div>
-      </div>
-
-      <!-- 分頁頁籤 (Tabs) -->
-      <div class="bg-teal-950/80 border-t border-teal-800/80">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4">
-          <button @click="currentTab = 'progress'" 
-                  :class="currentTab === 'progress' ? 'border-amber-400 text-amber-300 bg-teal-900/60' : 'border-transparent text-teal-200 hover:text-white hover:bg-teal-900/30'"
-                  class="py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center space-x-2">
-            <i class="fa-solid fa-chart-line"></i>
-            <span>累積進度</span>
-          </button>
-
-          <button @click="currentTab = 'ledger'" 
-                  :class="currentTab === 'ledger' ? 'border-amber-400 text-amber-300 bg-teal-900/60' : 'border-transparent text-teal-200 hover:text-white hover:bg-teal-900/30'"
-                  class="py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center space-x-2">
-            <i class="fa-solid fa-receipt"></i>
-            <span>記帳頁面</span>
-            <span class="bg-teal-700 text-teal-100 text-[10px] px-1.5 py-0.2 rounded-full">{{ transactions.length }}</span>
-          </button>
-
-          <button @click="currentTab = 'details'" 
-                  :class="currentTab === 'details' ? 'border-amber-400 text-amber-300 bg-teal-900/60' : 'border-transparent text-teal-200 hover:text-white hover:bg-teal-900/30'"
-                  class="py-3 px-4 font-bold text-xs sm:text-sm border-b-2 transition flex items-center space-x-2">
-            <i class="fa-solid fa-circle-info"></i>
-            <span>活動說明</span>
-          </button>
+          <!-- 用戶與卡別標籤 -->
+          <div class="flex items-center space-x-3 text-xs text-slate-600">
+            <div class="hidden sm:flex items-center space-x-1 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+              <i class="fa-solid fa-credit-card text-[#006564]"></i>
+              <span class="font-medium text-slate-700">鈦商卡 (加速器 $10/里 ✕ 一般 $25/里)</span>
+            </div>
+            <div class="flex items-center space-x-1.5 bg-[#eaf4f4] text-[#006564] px-3 py-1.5 rounded-full font-bold">
+              <i class="fa-solid fa-cake-candles"></i>
+              <span>8月壽星</span>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-8">
+      <!-- 歡迎回來區塊 (還原國泰官網 Hero 佈局) -->
+      <section class="bg-gradient-to-r from-[#eef5f4] via-[#f4f7f6] to-[#eaf2f2] rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm relative overflow-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+          <!-- 左側問候語 -->
+          <div class="lg:col-span-7 space-y-2">
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              歡迎回來，亞萬鈦商卡卡友！
+            </h2>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+              即時追蹤您的 <strong>9月滿額加碼 (最高 4,000 里)</strong> 與 <strong>8月生日禮 2倍加碼 (最高 5,000 里)</strong>，自動依請款日每日加總無條件進位試算。
+            </p>
 
-      <!-- ================= 頁籤 1：累積進度 (Progress) ================= -->
-      <div v-if="currentTab === 'progress'" class="space-y-6">
-        <!-- 總哩程預估 Hero 卡片 -->
-        <div class="bg-gradient-to-br from-teal-800 via-teal-900 to-slate-900 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden border border-teal-700/40">
-          <div class="absolute -right-6 -bottom-8 text-teal-600/15 text-9xl pointer-events-none">
-            <i class="fa-solid fa-plane"></i>
-          </div>
-          
-          <div class="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-            <div class="lg:col-span-2 space-y-2">
-              <div class="inline-flex items-center space-x-2 bg-amber-400/20 text-amber-300 text-xs px-3 py-1 rounded-full border border-amber-400/30">
-                <i class="fa-solid fa-sparkles"></i>
-                <span>雙重活動加碼總試算</span>
+            <!-- 溫潤米色提示公告欄 (還原國泰官網風格) -->
+            <div class="mt-4 bg-[#f5f2eb] border border-[#e5dec9] rounded-xl p-3.5 flex items-center space-x-3 text-xs text-[#5c4d32]">
+              <div class="w-8 h-8 rounded-lg bg-[#e8deca] flex-shrink-0 flex items-center justify-center text-[#8a7246]">
+                <i class="fa-solid fa-calendar-check text-sm"></i>
               </div>
-              <div class="text-4xl sm:text-5xl font-extrabold text-amber-300 tracking-tight">
-                {{ formatNum(totalMiles) }} <span class="text-xl font-normal text-teal-200">里</span>
+              <div class="flex-1">
+                <span class="font-bold">2026 雙重加碼活動進行中</span>
+                <p class="text-[11px] text-[#786747] mt-0.5">活動A（9/21~9/30開放官網/App登錄）✕ 活動B（8月壽星特店享 NT$5=1里）</p>
               </div>
-              <p class="text-xs text-teal-200/90 leading-relaxed">
-                包含鈦商卡基礎/加速器回饋 <strong class="text-white">{{ formatNum(baseMilesTotal) }} 里</strong>，以及雙重活動加碼合計 <strong class="text-amber-300">{{ formatNum(activityAMiles + activityBMiles) }} 里</strong>。
-              </p>
             </div>
+          </div>
 
-            <!-- 右側星巴克解鎖與極速資訊 -->
-            <div class="bg-teal-950/60 p-4 rounded-2xl border border-teal-800/80 space-y-3">
-              <div class="flex items-center justify-between text-xs border-b border-teal-800/80 pb-2">
-                <span class="text-teal-300">活動A 好禮二 (星巴克飲品券)</span>
-                <i class="fa-solid fa-mug-hot text-amber-400"></i>
+          <!-- 右側「亞洲萬里通」里數懸浮白卡 (完全複製官網 UI) -->
+          <div class="lg:col-span-5">
+            <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm relative space-y-4">
+              <div class="border-t-4 border-[#006564] absolute top-0 left-0 right-0 rounded-t-xl"></div>
+              
+              <div class="flex justify-between items-start pt-1">
+                <div>
+                  <h3 class="text-sm font-bold text-slate-800">Titanium Member</h3>
+                  <p class="text-xs text-slate-400 font-mono mt-0.5">國泰世華亞洲萬里通鈦商卡</p>
+                </div>
+                <span class="text-[11px] bg-[#eaf4f4] text-[#006564] px-2 py-0.5 rounded font-bold">正卡專屬</span>
               </div>
-              <div v-if="starbucksQualified" class="flex items-center space-x-2 text-emerald-400 text-xs font-bold bg-emerald-950/50 p-2.5 rounded-xl border border-emerald-800/40">
-                <i class="fa-solid fa-circle-check text-base"></i>
-                <span>符合資格！發送 30元+50元 飲品券各乙張</span>
+
+              <div class="grid grid-cols-2 gap-4 border-t border-slate-100 pt-3">
+                <div>
+                  <span class="text-[11px] text-slate-400 block mb-0.5">記帳筆數</span>
+                  <span class="text-lg font-bold text-slate-700 font-mono">{{ transactions.length }} <span class="text-xs font-normal text-slate-400">筆</span></span>
+                </div>
+                <div>
+                  <span class="text-[11px] text-slate-400 block mb-0.5">「亞洲萬里通」預估里數</span>
+                  <div class="text-2xl font-extrabold text-[#006564] font-mono tracking-tight flex items-baseline space-x-1">
+                    <span class="text-sm font-bold text-[#006564]">A</span>
+                    <span>{{ formatNum(totalMiles) }}</span>
+                  </div>
+                </div>
               </div>
-              <div v-else class="text-xs text-teal-300/70 bg-teal-900/40 p-2.5 rounded-xl flex justify-between items-center border border-teal-800/40">
-                <span>國內或海外消費滿 $30,000 解鎖</span>
-                <i class="fa-solid fa-lock text-teal-400"></i>
+
+              <div class="text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-lg flex justify-between items-center border border-slate-100">
+                <span>基礎/加速: <strong class="text-slate-800">{{ formatNum(baseMilesTotal) }}</strong> 里</span>
+                <span class="text-slate-300">|</span>
+                <span>雙加碼額外: <strong class="text-[#006564]">+{{ formatNum(activityAMiles + activityBMiles) }}</strong> 里</span>
               </div>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- 雙活動累積與門檻進度圖表 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <!-- 國泰風格分頁標籤 (我的進程風格) -->
+      <nav class="border-b border-slate-200 flex space-x-8">
+        <button @click="currentTab = 'progress'"
+                :class="currentTab === 'progress' ? 'border-[#006564] text-[#006564] font-bold' : 'border-transparent text-slate-500 hover:text-slate-800'"
+                class="pb-3 text-sm border-b-2 transition flex items-center space-x-2">
+          <i class="fa-solid fa-chart-pie text-xs"></i>
+          <span>累積進度</span>
+        </button>
+
+        <button @click="currentTab = 'ledger'"
+                :class="currentTab === 'ledger' ? 'border-[#006564] text-[#006564] font-bold' : 'border-transparent text-slate-500 hover:text-slate-800'"
+                class="pb-3 text-sm border-b-2 transition flex items-center space-x-2">
+          <i class="fa-solid fa-list-check text-xs"></i>
+          <span>記帳頁面</span>
+          <span class="bg-slate-200 text-slate-700 text-[10px] px-1.5 py-0.2 rounded-full font-mono">{{ transactions.length }}</span>
+        </button>
+
+        <button @click="currentTab = 'details'"
+                :class="currentTab === 'details' ? 'border-[#006564] text-[#006564] font-bold' : 'border-transparent text-slate-500 hover:text-slate-800'"
+                class="pb-3 text-sm border-b-2 transition flex items-center space-x-2">
+          <i class="fa-solid fa-circle-info text-xs"></i>
+          <span>活動說明</span>
+        </button>
+      </nav>
+
+      <!-- ================= 頁籤 1：累積進度 (Progress) ================= -->
+      <div v-if="currentTab === 'progress'" class="space-y-6">
+        
+        <!-- 快速統計 4 欄網格 (複製國泰官網快速連結設計) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           
-          <!-- 活動A：9月滿額贈加碼進度卡 -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
-            <div class="flex justify-between items-start border-b pb-3 border-slate-100">
-              <div>
-                <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
-                  <span class="w-3 h-3 bg-amber-500 rounded-full inline-block"></span>
-                  <span>活動A：9月滿額額外加碼</span>
-                </h3>
-                <p class="text-xs text-slate-500 mt-0.5">國內/海外一般消費每滿 $30,000 贈哩（上限 4,000 里）</p>
-              </div>
-              <span class="text-xs bg-amber-50 text-amber-700 font-bold px-2.5 py-1 rounded-lg border border-amber-200">
-                已獲 +{{ formatNum(activityAMiles) }} 里
-              </span>
+          <!-- 卡片 1: 總預估里數 -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-[#eaf4f4] text-[#006564] flex items-center justify-center text-xl flex-shrink-0">
+              <i class="fa-solid fa-coins"></i>
             </div>
-
-            <!-- 海外累積與計算 -->
-            <div class="space-y-2">
-              <div class="flex justify-between text-xs font-bold text-slate-700">
-                <span class="flex items-center">
-                  <i class="fa-solid fa-globe text-blue-500 mr-1.5"></i>海外一般消費總額
-                </span>
-                <span class="text-blue-600">NT$ {{ formatNum(overseasValidTotal) }}</span>
-              </div>
-              <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div class="bg-blue-500 h-full transition-all duration-300" :style="{ width: Math.min(100, (overseasValidTotal / 120000) * 100) + '%' }"></div>
-              </div>
-              <div class="flex justify-between text-[11px] text-slate-500">
-                <span>門檻：每滿 $30,000 贈 1,000 里 (優先計算)</span>
-                <span class="font-bold text-slate-700">合規 {{ overseasSteps }} 組 (+{{ overseasSteps * 1000 }}里)</span>
-              </div>
-            </div>
-
-            <!-- 國內累積與計算 -->
-            <div class="space-y-2 pt-2 border-t border-slate-100">
-              <div class="flex justify-between text-xs font-bold text-slate-700">
-                <span class="flex items-center">
-                  <i class="fa-solid fa-house-flag text-teal-600 mr-1.5"></i>國內一般消費總額
-                </span>
-                <span class="text-teal-700">NT$ {{ formatNum(domesticValidTotal) }}</span>
-              </div>
-              <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div class="bg-teal-600 h-full transition-all duration-300" :style="{ width: Math.min(100, (domesticValidTotal / 240000) * 100) + '%' }"></div>
-              </div>
-              <div class="flex justify-between text-[11px] text-slate-500">
-                <span>門檻：每滿 $30,000 贈 500 里 (剩餘額度計算)</span>
-                <span class="font-bold text-slate-700">合規 {{ domesticSteps }} 組 (+{{ domesticSteps * 500 }}里)</span>
-              </div>
-            </div>
-
-            <!-- 活動A 上限進度條 -->
-            <div class="bg-slate-50 p-3.5 rounded-xl space-y-2 border border-slate-100">
-              <div class="flex justify-between text-xs font-bold">
-                <span class="text-slate-600">活動A 總加碼上限進度 (4,000 里)</span>
-                <span class="text-amber-600">{{ ((activityAMiles / 4000) * 100).toFixed(0) }}%</span>
-              </div>
-              <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
-                <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-full transition-all duration-300" :style="{ width: (activityAMiles / 4000) * 100 + '%' }"></div>
-              </div>
+            <div>
+              <span class="text-xs text-slate-400 block font-medium">當期總預估里數</span>
+              <span class="text-xl font-extrabold text-slate-900 font-mono">{{ formatNum(totalMiles) }} <span class="text-xs font-normal text-slate-500">里</span></span>
             </div>
           </div>
 
-          <!-- 活動B：8月生日月特店2倍加碼卡 -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+          <!-- 卡片 2: 卡片基礎與加速器 -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-xl flex-shrink-0">
+              <i class="fa-solid fa-credit-card"></i>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block font-medium">鈦商卡基礎/加速補正</span>
+              <span class="text-xl font-extrabold text-slate-800 font-mono">{{ formatNum(baseMilesTotal) }} <span class="text-xs font-normal text-slate-500">里</span></span>
+            </div>
+          </div>
+
+          <!-- 卡片 3: 活動A 滿額加碼 -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-xl flex-shrink-0">
+              <i class="fa-solid fa-gift"></i>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block font-medium">活動A 滿額額外加碼</span>
+              <span class="text-xl font-extrabold text-amber-700 font-mono">+{{ formatNum(activityAMiles) }} <span class="text-xs font-normal text-slate-400">/ 4k里</span></span>
+            </div>
+          </div>
+
+          <!-- 卡片 4: 活動B 生日禮加碼 -->
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-4">
+            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center text-xl flex-shrink-0">
+              <i class="fa-solid fa-cake-candles"></i>
+            </div>
+            <div>
+              <span class="text-xs text-slate-400 block font-medium">活動B 8月生日加碼</span>
+              <span class="text-xl font-extrabold text-purple-700 font-mono">+{{ formatNum(activityBMiles) }} <span class="text-xs font-normal text-slate-400">/ 5k里</span></span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 鈦商卡哩程加速器 10 萬元帳單月上限監控 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <div class="flex justify-between items-center border-b pb-3 border-slate-100">
+            <div class="flex items-center space-x-2">
+              <i class="fa-solid fa-bolt text-[#006564]"></i>
+              <h3 class="font-bold text-slate-800 text-sm">每期帳單「哩程加速器」NT$ 100,000 上限監控</h3>
+            </div>
+            <span class="text-xs font-mono font-bold text-[#006564]">
+              NT$ {{ formatNum(acceleratorTotal) }} / $100,000
+            </span>
+          </div>
+
+          <div class="space-y-1.5">
+            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-[#006564] h-full transition-all duration-300" :style="{ width: Math.min(100, (acceleratorTotal / 100000) * 100) + '%' }"></div>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-500">
+              <span>額度內享 $10/里 (當期先給 $25/里，次期補額外差額)</span>
+              <span v-if="acceleratorTotal > 100000" class="text-rose-600 font-bold">已超出 $10萬，超過部分回歸 $25/里</span>
+              <span v-else class="text-[#006564] font-medium">剩餘額度 NT$ {{ formatNum(100000 - acceleratorTotal) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 雙活動達標門檻與進度細節 -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          <!-- 活動A 滿額加碼卡片 -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
             <div class="flex justify-between items-start border-b pb-3 border-slate-100">
               <div>
-                <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
-                  <span class="w-3 h-3 bg-purple-600 rounded-full inline-block"></span>
-                  <span>活動B：8月生日月哩程加速器2倍</span>
-                </h3>
-                <p class="text-xs text-slate-500 mt-0.5">8月於指定「哩程加速器」消費享額外1倍加碼（上限 5,000 里）</p>
+                <span class="text-[11px] text-amber-700 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">活動A (須登錄)</span>
+                <h3 class="font-bold text-slate-800 text-base mt-1">9月滿額額外加碼 (最高 4,000 里)</h3>
               </div>
-              <span class="text-xs bg-purple-50 text-purple-700 font-bold px-2.5 py-1 rounded-lg border border-purple-200">
-                已獲 +{{ formatNum(activityBMiles) }} 里
+              <span class="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
+                進度 {{ ((activityAMiles / 4000) * 100).toFixed(0) }}%
               </span>
             </div>
 
-            <div class="bg-purple-50/50 p-4 rounded-xl space-y-3 border border-purple-100">
-              <div class="flex justify-between text-xs font-bold text-slate-700">
-                <span>8月生日月加速器消費合規總額</span>
-                <span class="text-purple-700 font-mono text-sm">NT$ {{ formatNum(augustAcceleratorTotal) }}</span>
+            <!-- 海外消費門檻 -->
+            <div class="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div class="flex justify-between text-xs font-medium text-slate-700">
+                <span class="flex items-center"><i class="fa-solid fa-globe text-blue-600 mr-1.5"></i>海外一般消費總額</span>
+                <span class="font-mono font-bold text-blue-700">NT$ {{ formatNum(overseasValidTotal) }}</span>
               </div>
-              <div class="text-xs text-slate-600 leading-relaxed">
-                鈦商卡加速器原回饋：<strong class="text-purple-800">$10 = 1 里</strong><br>
-                生日月額外加碼：<strong class="text-purple-800">額外贈 1 倍里數</strong> (相當於 $5/里 優惠效果)
+              <div class="flex justify-between text-[11px] text-slate-500">
+                <span>每滿 $30,000 贈 1,000 里 (優先採計)</span>
+                <span class="font-bold text-slate-800">已採計 {{ overseasSteps }} 組 (+{{ overseasSteps * 1000 }}里)</span>
               </div>
             </div>
 
-            <!-- 活動B 上限進度條 -->
-            <div class="space-y-2">
-              <div class="flex justify-between text-xs font-bold">
-                <span class="text-slate-600">生日加碼最高上限 (5,000 里)</span>
-                <span class="text-purple-700">{{ ((activityBMiles / 5000) * 100).toFixed(0) }}%</span>
+            <!-- 國內消費門檻 -->
+            <div class="space-y-1.5 bg-slate-50 p-3 rounded-lg border border-slate-100">
+              <div class="flex justify-between text-xs font-medium text-slate-700">
+                <span class="flex items-center"><i class="fa-solid fa-house-flag text-[#006564] mr-1.5"></i>國內一般消費總額</span>
+                <span class="font-mono font-bold text-[#006564]">NT$ {{ formatNum(domesticValidTotal) }}</span>
               </div>
-              <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
-                <div class="bg-gradient-to-r from-purple-500 to-indigo-600 h-full transition-all duration-300" :style="{ width: (activityBMiles / 5000) * 100 + '%' }"></div>
+              <div class="flex justify-between text-[11px] text-slate-500">
+                <span>每滿 $30,000 贈 500 里 (剩餘額度採計)</span>
+                <span class="font-bold text-slate-800">已採計 {{ domesticSteps }} 組 (+{{ domesticSteps * 500 }}里)</span>
               </div>
-              <p class="text-[11px] text-slate-400">當在8月壽星月於加速器消費滿 NT$ 50,000，即可領滿 5,000 里加碼！</p>
+            </div>
+
+            <!-- 好禮二 星巴克飲品券解鎖 -->
+            <div class="p-3 rounded-lg border flex justify-between items-center text-xs" 
+                 :class="starbucksQualified ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-slate-50 border-slate-200 text-slate-500'">
+              <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-mug-hot text-base" :class="starbucksQualified ? 'text-emerald-600' : 'text-slate-400'"></i>
+                <div>
+                  <strong class="block">好禮二：星巴克 30元+50元 飲品券各乙張</strong>
+                  <span class="text-[11px]">國內或海外消費滿 $30,000(含)以上即可解鎖</span>
+                </div>
+              </div>
+              <span v-if="starbucksQualified" class="font-bold text-emerald-700 bg-white px-2 py-1 rounded shadow-sm">已解鎖</span>
+              <span v-else class="text-slate-400">未達標</span>
+            </div>
+          </div>
+
+          <!-- 活動B 8月生日禮加碼卡片 -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div class="flex justify-between items-start border-b pb-3 border-slate-100">
+              <div>
+                <span class="text-[11px] text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-200">活動B (8月壽星)</span>
+                <h3 class="font-bold text-slate-800 text-base mt-1">生日當月加速器 2倍里數 (最高 5,000 里)</h3>
+              </div>
+              <span class="text-xs font-mono font-bold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
+                進度 {{ ((activityBMiles / 5000) * 100).toFixed(0) }}%
+              </span>
+            </div>
+
+            <div class="bg-purple-50/50 p-4 rounded-xl space-y-2 border border-purple-100">
+              <div class="flex justify-between text-xs font-medium text-slate-700">
+                <span>8月壽星月加速器消費累積</span>
+                <span class="font-mono font-bold text-purple-800">NT$ {{ formatNum(augustAcceleratorTotal) }}</span>
+              </div>
+              <p class="text-[11px] text-slate-600 leading-relaxed">
+                鈦商卡加速器原給予 $10=1里，8月生日月於特店消費再<strong>額外加碼 1 倍里數</strong>（相當於 $5/里 優惠力道）。
+              </p>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="flex justify-between text-xs font-bold text-slate-700">
+                <span>生日加碼上限 5,000 里進度</span>
+                <span class="text-purple-700">{{ formatNum(activityBMiles) }} / 5,000 里</span>
+              </div>
+              <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-purple-600 h-full transition-all duration-300" :style="{ width: (activityBMiles / 5000) * 100 + '%' }"></div>
+              </div>
+              <p class="text-[11px] text-slate-400">8月於加速器消費滿 NT$ 50,000 即拿滿 5,000 里上限！</p>
             </div>
           </div>
 
@@ -225,12 +314,12 @@
       <!-- ================= 頁籤 2：記帳頁面 (Ledger) ================= -->
       <div v-if="currentTab === 'ledger'" class="space-y-6">
         
-        <!-- 工具列與新增按鈕 -->
-        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <!-- 工具列 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div class="flex flex-wrap items-center gap-2">
-            <span class="text-xs font-bold text-slate-500 mr-1">篩選檢視：</span>
+            <span class="text-xs text-slate-400 font-medium mr-1">篩選標籤：</span>
             <button @click="filter = 'all'" 
-                    :class="filter === 'all' ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" 
+                    :class="filter === 'all' ? 'bg-[#006564] text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'" 
                     class="px-3 py-1.5 rounded-lg text-xs font-medium transition">
               全部紀錄
             </button>
@@ -242,36 +331,36 @@
             <button @click="filter = 'actA'" 
                     :class="filter === 'actA' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-700 hover:bg-amber-100'" 
                     class="px-3 py-1.5 rounded-lg text-xs font-medium transition">
-              活動A滿額採計
+              活動A採計
             </button>
             <button @click="filter = 'invalid'" 
                     :class="filter === 'invalid' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-700 hover:bg-rose-100'" 
                     class="px-3 py-1.5 rounded-lg text-xs font-medium transition">
-              無效/警告紀錄
+              排除/無效管道
             </button>
           </div>
 
           <div class="flex items-center space-x-2 w-full sm:w-auto">
-            <button @click="openAddModal" class="flex-1 sm:flex-none px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs font-bold transition shadow-sm flex items-center justify-center space-x-2">
+            <button @click="openAddModal" class="flex-1 sm:flex-none px-4 py-2 bg-[#006564] hover:bg-[#004d4a] text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center space-x-2">
               <i class="fa-solid fa-plus"></i>
-              <span>新增消費紀錄</span>
+              <span>新增消費簽帳</span>
             </button>
-            <button v-if="transactions.length > 0" @click="clearAllTx" class="px-3 py-2 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-xl text-xs transition border border-slate-200" title="清空全部資料">
+            <button v-if="transactions.length > 0" @click="clearAllTx" class="px-3 py-2 bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 rounded-lg text-xs transition border border-slate-200" title="清空全部資料">
               <i class="fa-solid fa-trash-can"></i>
             </button>
           </div>
         </div>
 
-        <!-- 記帳表格 -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <!-- 記帳表格 (國泰極簡風格) -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse">
               <thead>
-                <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-100">
-                  <th class="py-3.5 px-4">消費日期</th>
+                <tr class="bg-slate-50 text-slate-500 text-xs font-semibold uppercase tracking-wider border-b border-slate-200">
+                  <th class="py-3.5 px-4">消費日 / 請款日</th>
                   <th class="py-3.5 px-4">消費通路 / 商店名稱</th>
                   <th class="py-3.5 px-4">金額 (NT$)</th>
-                  <th class="py-3.5 px-4">支付方式 / 資格</th>
+                  <th class="py-3.5 px-4">支付管道</th>
                   <th class="py-3.5 px-4 text-center">鈦商卡基礎/加速</th>
                   <th class="py-3.5 px-4 text-center">活動A (滿額)</th>
                   <th class="py-3.5 px-4 text-center">活動B (8月生日)</th>
@@ -281,19 +370,22 @@
               <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
                 <tr v-for="tx in filteredTransactions" :key="tx.id" class="hover:bg-slate-50/80 transition-colors">
                   <!-- 日期 -->
-                  <td class="py-3.5 px-4 font-mono font-medium text-slate-600">
-                    {{ tx.date }}
-                    <span v-if="isAugust(tx.date)" class="ml-1 px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">8月</span>
+                  <td class="py-3.5 px-4 font-mono">
+                    <div class="text-slate-800 font-medium">消費: {{ tx.date }}</div>
+                    <div class="text-[11px] text-[#006564] font-bold mt-0.5">
+                      入帳: {{ getPostedDate(tx) }}
+                      <span v-if="isAugust(getPostedDate(tx)) || isAugust(tx.date)" class="ml-1 px-1.5 py-0.2 bg-purple-100 text-purple-700 rounded text-[10px]">8月</span>
+                    </div>
                   </td>
                   
-                  <!-- 商店名稱與標籤 -->
+                  <!-- 通路名稱與標籤 -->
                   <td class="py-3.5 px-4">
-                    <div class="font-bold text-slate-800">{{ tx.merchant }}</div>
+                    <div class="font-bold text-slate-900">{{ tx.merchant }}</div>
                     <div class="flex flex-wrap gap-1 mt-1">
-                      <span v-if="tx.isOverseas" class="px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-[10px]">海外消費</span>
-                      <span v-else class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px]">國內消費</span>
+                      <span v-if="tx.isOverseas" class="px-1.5 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded text-[10px]">海外刷卡</span>
+                      <span v-else class="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px]">國內刷卡</span>
                       
-                      <span v-if="tx.isAccelerator" class="px-1.5 py-0.5 bg-amber-50 text-amber-700 border border-amber-200 rounded text-[10px] font-medium">
+                      <span v-if="tx.isAccelerator" class="px-1.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded text-[10px] font-medium">
                         <i class="fa-solid fa-bolt text-amber-500 mr-0.5"></i>哩程加速器 ($10/里)
                       </span>
                       <span v-else class="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px]">一般消費 ($25/里)</span>
@@ -301,36 +393,36 @@
                   </td>
 
                   <!-- 金額 -->
-                  <td class="py-3.5 px-4 font-mono font-bold text-slate-800">
+                  <td class="py-3.5 px-4 font-mono font-bold text-slate-900 text-sm">
                     ${{ formatNum(tx.amount) }}
                   </td>
 
-                  <!-- 支付方式與狀態警告 -->
+                  <!-- 支付管道 -->
                   <td class="py-3.5 px-4">
                     <div class="flex items-center space-x-1 font-medium" :class="tx.isValidPayment ? 'text-slate-700' : 'text-rose-600 font-bold'">
                       <i v-if="!tx.isValidPayment" class="fa-solid fa-triangle-exclamation text-rose-500"></i>
                       <span>{{ getPaymentLabel(tx.paymentMethod) }}</span>
                     </div>
-                    <div v-if="!tx.isValidPayment" class="text-[10px] text-rose-500 mt-0.5 font-bold">排除項/不享有里數</div>
+                    <div v-if="!tx.isValidPayment" class="text-[10px] text-rose-500 mt-0.5 font-bold">排除管道/無里數</div>
                   </td>
 
-                  <!-- 基礎/加速哩程 -->
+                  <!-- 基礎里數 -->
                   <td class="py-3.5 px-4 text-center font-mono font-bold">
-                    <span v-if="tx.isValidPayment" class="text-teal-700">+{{ formatNum(calcBaseMiles(tx)) }} 里</span>
+                    <span v-if="tx.isValidPayment" class="text-[#006564]">+{{ formatNum(calcBaseMiles(tx)) }} 里</span>
                     <span v-else class="text-slate-300">0</span>
                   </td>
 
-                  <!-- 活動A標籤 -->
+                  <!-- 活動A 採計 -->
                   <td class="py-3.5 px-4 text-center">
-                    <span v-if="tx.isValidPayment" class="inline-block px-2 py-0.5 bg-amber-50 text-amber-700 rounded font-medium text-[11px]">
+                    <span v-if="tx.isValidPayment" class="inline-block px-2 py-0.5 bg-amber-50 text-amber-800 rounded font-medium text-[11px]">
                       採計 NT${{ formatNum(tx.amount) }}
                     </span>
                     <span v-else class="text-slate-300">-</span>
                   </td>
 
-                  <!-- 活動B標籤 -->
+                  <!-- 活動B 採計 -->
                   <td class="py-3.5 px-4 text-center font-mono">
-                    <span v-if="isAugust(tx.date) && tx.isAccelerator && tx.isValidPayment" class="text-purple-700 font-bold">
+                    <span v-if="(isAugust(tx.date) || isAugust(getPostedDate(tx))) && tx.isAccelerator && tx.isValidPayment" class="text-purple-700 font-bold">
                       +{{ formatNum(calcBaseMiles(tx)) }} 里
                     </span>
                     <span v-else class="text-slate-300">-</span>
@@ -346,10 +438,11 @@
                     </button>
                   </td>
                 </tr>
+
                 <tr v-if="filteredTransactions.length === 0">
                   <td colspan="8" class="text-center py-12 text-slate-400">
-                    <i class="fa-solid fa-folder-open text-4xl mb-3 block text-slate-300"></i>
-                    尚無筆記紀錄，請點擊「新增消費紀錄」開始記帳
+                    <i class="fa-solid fa-receipt text-3xl mb-2 block text-slate-300"></i>
+                    尚無筆記紀錄，請點擊上方「新增消費簽帳」開始記帳
                   </td>
                 </tr>
               </tbody>
@@ -360,123 +453,107 @@
 
       <!-- ================= 頁籤 3：活動說明 (Details) ================= -->
       <div v-if="currentTab === 'details'" class="space-y-6">
+        
+        <!-- 鈦商卡基礎與加速器機制 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b pb-3 border-slate-100 flex justify-between items-center">
+            <h3 class="font-bold text-slate-800 text-base flex items-center space-x-2">
+              <i class="fa-solid fa-credit-card text-[#006564]"></i>
+              <span>國泰世華亞洲萬里通鈦商卡 權益說明</span>
+            </h3>
+            <span class="bg-slate-100 text-slate-600 text-xs px-2.5 py-1 rounded-lg">2025/12/10~2026/12/31</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-1">
+              <strong class="text-slate-800 block font-bold">💳 一般消費 ($25/里)</strong>
+              <p class="text-slate-600">依請款/入帳日每日請款金額加總，每滿 NT$25 累積 1 里點數，未滿 1 里無條件進位。</p>
+            </div>
+            <div class="bg-amber-50/50 p-4 rounded-xl border border-amber-100/60 space-y-1">
+              <strong class="text-amber-900 block font-bold">⚡ 哩程加速器 ($10/里)</strong>
+              <p class="text-amber-800">指定特店每滿 NT$10 累積 1 里。每期帳單加速器上限 NT$100,000 (上限額外補 6,000 里)。</p>
+            </div>
+          </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
           
-          <!-- 活動 A 詳細說明 -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <!-- 活動 A 說明 -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
             <div class="border-b pb-3 border-slate-100">
-              <span class="text-xs bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">登錄制</span>
-              <h3 class="font-bold text-slate-800 text-lg mt-1">活動A：滿額加碼最高送 4,000 里 + 星巴克</h3>
+              <span class="text-xs bg-amber-50 text-amber-800 font-bold px-2 py-0.5 rounded border border-amber-200">登錄專案</span>
+              <h3 class="font-bold text-slate-800 text-base mt-1">活動A：9月滿額加碼最高送 4,000 里 + 星巴克</h3>
             </div>
             
-            <ul class="text-xs text-slate-600 space-y-3 leading-relaxed">
+            <ul class="text-xs text-slate-600 space-y-2.5 leading-relaxed">
               <li class="flex items-start space-x-2">
-                <i class="fa-solid fa-calendar text-amber-500 mt-0.5"></i>
-                <span><strong>登錄時間：</strong> 2026/9/21 16:00 至 2026/9/30 23:59 (本行官網或國泰優惠 App)。</span>
+                <i class="fa-solid fa-calendar-days text-amber-600 mt-0.5"></i>
+                <span><strong>活動登錄：</strong> 2026/9/21 16:00 至 2026/9/30 23:59 於國泰官網/App登錄。</span>
               </li>
               <li class="flex items-start space-x-2">
-                <i class="fa-solid fa-credit-card text-amber-500 mt-0.5"></i>
-                <span><strong>請款期限：</strong> 刷卡消費最晚需於 2026/10/9 前請款入帳。正附卡消費歸戶合併計算。</span>
+                <i class="fa-solid fa-clock text-amber-600 mt-0.5"></i>
+                <span><strong>請款期限：</strong> 最晚須於 2026/10/9 前商店請款入帳。正附卡合併計算。</span>
               </li>
               <li class="flex items-start space-x-2">
-                <i class="fa-solid fa-gift text-amber-500 mt-0.5"></i>
+                <i class="fa-solid fa-gift text-amber-600 mt-0.5"></i>
                 <div>
-                  <strong>好禮一 (額外里數最高 4,000 里)：</strong>
-                  <ul class="list-disc pl-4 mt-1 space-y-1">
-                    <li>海外一般消費：每累計刷達 NT$30,000 贈額外 <strong>1,000 里</strong>。</li>
-                    <li>國內一般消費：每累計刷達 NT$30,000 贈額外 <strong>500 里</strong>。</li>
-                    <li>計算優先順序：<strong>優先計算海外消費達檻</strong>，再計算國內消費達檻。</li>
-                  </ul>
+                  <strong>好禮一 (最高 4,000 里)：</strong>
+                  <p class="mt-0.5">• 海外一般消費：每滿 $30,000 贈額外 1,000 里。</p>
+                  <p>• 國內一般消費：每滿 $30,000 贈額外 500 里。</p>
+                  <p class="text-[#006564] font-bold mt-0.5">★ 系統優先計算海外消費達檻，再計算國內達檻。</p>
                 </div>
               </li>
               <li class="flex items-start space-x-2">
-                <i class="fa-solid fa-mug-hot text-amber-500 mt-0.5"></i>
-                <span><strong>好禮二 (星巴克飲品券)：</strong> 活動期間國內或海外一般消費累計刷達 NT$30,000(含)以上(擇一符合)，即贈星巴克「30元飲品優惠券*1張 + 50元飲品優惠券*1張」電子券 (每正卡人限乙份)。</span>
+                <i class="fa-solid fa-mug-hot text-amber-600 mt-0.5"></i>
+                <span><strong>好禮二 (星巴克飲品券)：</strong> 活動期間國內或海外一般消費累計滿 $30,000(含)以上，贈「30元+50元」飲品券電子券乙份。</span>
               </li>
             </ul>
           </div>
 
-          <!-- 活動 B 詳細說明 -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <!-- 活動 B 說明 -->
+          <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
             <div class="border-b pb-3 border-slate-100">
-              <span class="text-xs bg-purple-100 text-purple-800 font-bold px-2 py-0.5 rounded">壽星專屬</span>
-              <h3 class="font-bold text-slate-800 text-lg mt-1">活動B：8月生日當月指定消費 2倍里數</h3>
+              <span class="text-xs bg-purple-50 text-purple-800 font-bold px-2 py-0.5 rounded border border-purple-200">8月壽星專屬</span>
+              <h3 class="font-bold text-slate-800 text-base mt-1">活動B：8月生日當月加速器特店 2倍里數</h3>
             </div>
 
-            <ul class="text-xs text-slate-600 space-y-3 leading-relaxed">
+            <ul class="text-xs text-slate-600 space-y-2.5 leading-relaxed">
               <li class="flex items-start space-x-2">
                 <i class="fa-solid fa-cake-candles text-purple-600 mt-0.5"></i>
-                <span><strong>資格：</strong> 亞洲萬里通聯名卡正卡持卡人，於<strong>生日當月(8月)</strong>於「哩程加速器」特店消費。</span>
+                <span><strong>資格：</strong> 亞洲萬里通聯名卡正卡持卡人，生日當月(8月)於「哩程加速器」特店消費。</span>
               </li>
               <li class="flex items-start space-x-2">
                 <i class="fa-solid fa-bolt text-purple-600 mt-0.5"></i>
-                <span><strong>回饋內容：</strong> 享里數 2倍 回饋 (鈦商卡原 NT$10=1里，額外再加碼1倍里數，相當於 NT$5 = 1里)。</span>
+                <span><strong>加碼內容：</strong> 原 $10=1里 外，額外再加碼 1 倍里數 (相當於 $5 = 1里)。</span>
               </li>
               <li class="flex items-start space-x-2">
-                <i class="fa-solid fa-hand-holding-dollar text-purple-600 mt-0.5"></i>
-                <span><strong>生日禮加碼上限：</strong> 生日當月最高可獲得額外 <strong>5,000 里數</strong>（與每月哩程加速器原本的回饋上限分開獨立計算）。</span>
+                <i class="fa-solid fa-shield text-purple-600 mt-0.5"></i>
+                <span><strong>生日禮上限：</strong> 額外加碼上限 <strong>5,000 里數</strong>（與每月加速器原本上限獨立分開計算）。</span>
               </li>
               <li class="flex items-start space-x-2">
-                <i class="fa-solid fa-clock text-purple-600 mt-0.5"></i>
-                <span><strong>請款時間：</strong> 商家需於持卡人生日之次月 15 日前 (9/15前) 完成請款方可計入。</span>
+                <i class="fa-solid fa-calendar-check text-purple-600 mt-0.5"></i>
+                <span><strong>請款時間：</strong> 商家需於生日次月 15 日前 (9/15前) 完成請款入帳。</span>
               </li>
             </ul>
           </div>
 
         </div>
 
-        <!-- 哩程加速器特店與無效刷卡排查區 -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <!-- 哩程加速器指定商店列表 -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-            <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-2 border-b pb-2">
-              <i class="fa-solid fa-bolt text-amber-500"></i>
-              <span>哩程加速器指定商店分類參考</span>
-            </h4>
-            <div class="grid grid-cols-2 gap-2 text-xs text-slate-600">
-              <div class="bg-slate-50 p-2.5 rounded-lg">
-                <strong class="text-slate-800 block mb-1">✈️ 航空公司 & 旅遊平台</strong>
-                國泰航空官網、Klook、KKday、易游網、雄獅旅遊
-              </div>
-              <div class="bg-slate-50 p-2.5 rounded-lg">
-                <strong class="text-slate-800 block mb-1">🏨 飯店住宿 & 免稅店</strong>
-                Agoda、Booking.com、昇恆昌免稅店、采盟免稅店
-              </div>
-              <div class="bg-slate-50 p-2.5 rounded-lg">
-                <strong class="text-slate-800 block mb-1">🛍️ 國內指定百貨/租車</strong>
-                遠東SOGO、和運租車、格上租車
-              </div>
-              <div class="bg-slate-50 p-2.5 rounded-lg">
-                <strong class="text-slate-800 block mb-1">🌏 海外消費</strong>
-                海外實體商店實體刷卡消費（非新臺幣交易）
-              </div>
+        <!-- 排除與注意事項 -->
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-3">
+          <h4 class="font-bold text-rose-700 text-sm flex items-center space-x-2 border-b pb-2">
+            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+            <span>完全無哩程回饋之排除項目 (請務必避開)</span>
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs text-slate-600">
+            <div class="bg-rose-50/50 p-3 rounded-lg border border-rose-100">
+              <strong class="text-rose-800 block mb-1">❌ 第三方/電子支付完全零回饋</strong>
+              LINE Pay、街口、全支付、PX Pay、悠遊付、Pi錢包、橘子支付、PayPal、綠界/藍新支付平台等。
             </div>
-          </div>
-
-          <!-- 排除項目與注意事項 -->
-          <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-3">
-            <h4 class="font-bold text-rose-700 text-sm flex items-center space-x-2 border-b pb-2">
-              <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
-              <span>完全無哩程回饋之排除項目（請務必避開）</span>
-            </h4>
-            <ul class="text-xs text-slate-600 space-y-2 leading-relaxed">
-              <li class="flex items-start space-x-1.5">
-                <span class="text-rose-500 font-bold">❌</span>
-                <span><strong>第三方/電子支付綁卡：</strong>LINE Pay、街口支付、全支付、PX Pay、悠遊付等電子錢包綁定消費（不論通路均零回饋）。</span>
-              </li>
-              <li class="flex items-start space-x-1.5">
-                <span class="text-rose-500 font-bold">❌</span>
-                <span><strong>便利超商與全聯：</strong>7-11、全家實體與線上門市、全聯福利中心、小額支付平台特店。</span>
-              </li>
-              <li class="flex items-start space-x-1.5">
-                <span class="text-rose-500 font-bold">❌</span>
-                <span><strong>規費與公用事業：</strong>水電瓦斯、路邊停車、學費、各類稅款、保費、悠遊卡/一卡通自動加值。</span>
-              </li>
-              <li class="flex items-start space-x-1.5">
-                <span class="text-emerald-600 font-bold">✅</span>
-                <span><strong>認證符合回饋：</strong>直接使用實體卡、Apple Pay、Google Pay、Samsung Pay 感應支付。</span>
-              </li>
-            </ul>
+            <div class="bg-rose-50/50 p-3 rounded-lg border border-rose-100">
+              <strong class="text-rose-800 block mb-1">❌ 門市與規費排除項</strong>
+              便利超商 (7-11/全家)、全聯福利中心、水電瓦斯、公務機關規費、學費、各類稅款、保費、悠遊卡/一卡通加值。
+            </div>
           </div>
         </div>
 
@@ -485,11 +562,11 @@
     </main>
 
     <!-- 新增/編輯消費 Modal -->
-    <div v-if="showModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div v-if="showModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl space-y-4">
         <div class="flex justify-between items-center border-b pb-3 border-slate-100">
-          <h3 class="font-bold text-slate-800 text-base">
-            {{ isEditing ? '編輯消費紀錄' : '新增消費簽帳紀錄' }}
+          <h3 class="font-bold text-slate-900 text-base">
+            {{ isEditing ? '編輯簽帳紀錄' : '新增消費簽帳紀錄' }}
           </h3>
           <button @click="closeModal" class="text-slate-400 hover:text-slate-600">
             <i class="fa-solid fa-xmark text-lg"></i>
@@ -497,46 +574,50 @@
         </div>
 
         <form @submit.prevent="saveTx" class="space-y-4 text-xs">
-          <!-- 消費日期與金額 -->
-          <div class="grid grid-cols-2 gap-3">
+          <!-- 日期與金額 -->
+          <div class="grid grid-cols-3 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1">消費日期 *</label>
-              <input type="date" v-model="form.date" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              <input type="date" v-model="form.date" required class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-[#006564] focus:outline-none">
             </div>
             <div>
-              <label class="block font-semibold text-slate-700 mb-1">消費金額 (NT$) *</label>
-              <input type="number" min="1" v-model.number="form.amount" required placeholder="如 30000" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              <label class="block font-semibold text-slate-700 mb-1">請款/入帳日</label>
+              <input type="date" v-model="form.postedDate" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-[#006564] focus:outline-none">
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-700 mb-1">金額 (NT$) *</label>
+              <input type="number" min="1" v-model.number="form.amount" required placeholder="如 30000" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-[#006564] focus:outline-none">
             </div>
           </div>
 
           <!-- 通路商店名稱 -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1">商店 / 通路名稱 *</label>
-            <input type="text" v-model="form.merchant" required placeholder="如：國泰航空官網預訂、Klook、日本免稅店" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            <input type="text" v-model="form.merchant" required placeholder="如：國泰航空官網、Klook、日本免稅店" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-[#006564] focus:outline-none">
           </div>
 
-          <!-- 區域與哩程加速器標籤 -->
+          <!-- 區域與哩程加速器 -->
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block font-semibold text-slate-700 mb-1">交易區域</label>
-              <select v-model="form.isOverseas" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              <select v-model="form.isOverseas" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-[#006564] focus:outline-none">
                 <option :value="false">國內消費 (新臺幣交易)</option>
                 <option :value="true">海外消費 (外幣或海外登記商戶)</option>
               </select>
             </div>
             <div>
               <label class="block font-semibold text-slate-700 mb-1">哩程加速器特店？</label>
-              <select v-model="form.isAccelerator" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+              <select v-model="form.isAccelerator" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-[#006564] focus:outline-none">
                 <option :value="true">是 ($10/里，8月享生日2倍)</option>
                 <option :value="false">否 ($25/里 一般消費)</option>
               </select>
             </div>
           </div>
 
-          <!-- 支付方式 -->
+          <!-- 支付管道 -->
           <div>
-            <label class="block font-semibold text-slate-700 mb-1">支付方式 *</label>
-            <select v-model="form.paymentMethod" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-teal-500 focus:outline-none">
+            <label class="block font-semibold text-slate-700 mb-1">支付管道 *</label>
+            <select v-model="form.paymentMethod" class="w-full border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-[#006564] focus:outline-none">
               <optgroup label="✅ 符合回饋資格">
                 <option value="physical">實體卡刷卡</option>
                 <option value="apple_pay">Apple Pay</option>
@@ -548,23 +629,23 @@
                 <option value="jko_pay">街口支付 / 電子支付</option>
                 <option value="px_pay">全支付 / PX Pay (全聯)</option>
                 <option value="convenience">便利超商 (7-11/全家)</option>
-                <option value="excluded_bills">公務機關 / 水電 / 稅款 / 學費</option>
+                <option value="excluded_bills">公務機關 / 水電 / 稅款 / 保費</option>
               </optgroup>
             </select>
           </div>
 
-          <!-- 警告提示 -->
+          <!-- 警示 -->
           <div v-if="!isPaymentValid(form.paymentMethod)" class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 flex items-start space-x-2">
             <i class="fa-solid fa-triangle-exclamation text-rose-500 mt-0.5"></i>
             <div>
               <strong>警示：此支付方式無任何哩程！</strong>
-              <p class="text-[11px] mt-0.5">活動條款已列明：卡片綁定第三方支付或於便利超商/全聯消費將被排除於一般消費之外。</p>
+              <p class="text-[11px] mt-0.5">條款已列明：卡片綁定第三方支付或於便利超商/全聯消費將被排除於一般消費之外。</p>
             </div>
           </div>
 
           <div class="pt-3 flex justify-end space-x-2">
             <button type="button" @click="closeModal" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-600 hover:bg-slate-50">取消</button>
-            <button type="submit" class="px-4 py-2 bg-teal-700 text-white rounded-lg font-bold hover:bg-teal-800">儲存紀錄</button>
+            <button type="submit" class="px-4 py-2 bg-[#006564] text-white rounded-lg font-bold hover:bg-[#004d4a]">儲存紀錄</button>
           </div>
         </form>
       </div>
@@ -578,18 +659,15 @@
       setup() {
         const STORAGE_KEY = 'cathay_asia_miles_titanium_txs';
 
-        // 固定分頁控制 ('progress' | 'ledger' | 'details')
         const currentTab = ref('progress');
-        
-        // Modal 控制
         const showModal = ref(false);
         const isEditing = ref(false);
         const filter = ref('all');
 
-        // 表單數據
         const form = ref({
           id: null,
           date: new Date().toISOString().split('T')[0],
+          postedDate: new Date().toISOString().split('T')[0],
           merchant: '',
           amount: null,
           isOverseas: false,
@@ -597,10 +675,8 @@
           paymentMethod: 'physical'
         });
 
-        // 交易紀錄數據 (從 localStorage 讀取或給予空陣列)
         const transactions = ref([]);
 
-        // 初始化讀取 localStorage
         onMounted(() => {
           const savedData = localStorage.getItem(STORAGE_KEY);
           if (savedData) {
@@ -613,12 +689,10 @@
           }
         });
 
-        // 當 transactions 變動時自動儲存到 localStorage
         watch(transactions, (newVal) => {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(newVal));
         }, { deep: true });
 
-        // 判斷支付方式是否有效
         const isPaymentValid = (method) => {
           return ['physical', 'apple_pay', 'google_pay', 'samsung_pay'].includes(method);
         };
@@ -633,53 +707,70 @@
             jko_pay: '街口支付 (第三方)',
             px_pay: '全支付/全聯',
             convenience: '便利超商',
-            excluded_bills: '公務/水電/稅款'
+            excluded_bills: '公務/水電/稅款/保費'
           };
           return map[method] || method;
         };
 
-        // 判斷是否為 8月 (壽星月份)
         const isAugust = (dateStr) => {
           if (!dateStr) return false;
           const month = new Date(dateStr).getMonth() + 1;
           return month === 8;
         };
 
-        // 計算鈦商卡基礎哩程 (加速器 $10/里，一般消費 $25/里)
+        const getPostedDate = (tx) => tx.postedDate || tx.date;
+
         const calcBaseMiles = (tx) => {
           if (!tx.isValidPayment) return 0;
           const rate = tx.isAccelerator ? 10 : 25;
-          return Math.floor(tx.amount / rate);
+          return Math.ceil(tx.amount / rate);
         };
 
-        // 鈦商卡基礎哩程總計
-        const baseMilesTotal = computed(() => {
-          return transactions.value.reduce((sum, tx) => sum + calcBaseMiles(tx), 0);
+        const acceleratorTotal = computed(() => {
+          return transactions.value
+            .filter(tx => tx.isValidPayment && tx.isAccelerator)
+            .reduce((sum, tx) => sum + tx.amount, 0);
         });
 
-        // 活動A：海外合規消費額與組數 (每滿 NT$30,000)
+        // 依請款日每日金額加總之無條件進位試算
+        const baseMilesTotal = computed(() => {
+          const validTxs = transactions.value.filter(tx => tx.isValidPayment);
+          
+          const dailyTotals = {};
+          validTxs.forEach(tx => {
+            const pDate = getPostedDate(tx);
+            dailyTotals[pDate] = (dailyTotals[pDate] || 0) + tx.amount;
+          });
+
+          let totalBase = 0;
+          Object.values(dailyTotals).forEach(amount => {
+            if (amount > 0) {
+              totalBase += Math.ceil(amount / 25);
+            }
+          });
+
+          const cappedAccSpending = Math.min(100000, acceleratorTotal.value);
+          const diffMiles = Math.floor(cappedAccSpending / 10) - Math.floor(cappedAccSpending / 25);
+
+          return totalBase + diffMiles;
+        });
+
         const overseasValidTotal = computed(() => {
           return transactions.value
             .filter(tx => tx.isValidPayment && tx.isOverseas)
             .reduce((sum, tx) => sum + tx.amount, 0);
         });
 
-        const overseasSteps = computed(() => {
-          return Math.floor(overseasValidTotal.value / 30000);
-        });
+        const overseasSteps = computed(() => Math.floor(overseasValidTotal.value / 30000));
 
-        // 活動A：國內合規消費額與組數 (每滿 NT$30,000)
         const domesticValidTotal = computed(() => {
           return transactions.value
             .filter(tx => tx.isValidPayment && !tx.isOverseas)
             .reduce((sum, tx) => sum + tx.amount, 0);
         });
 
-        const domesticSteps = computed(() => {
-          return Math.floor(domesticValidTotal.value / 30000);
-        });
+        const domesticSteps = computed(() => Math.floor(domesticValidTotal.value / 30000));
 
-        // 活動A 加碼里數計算 (優先算海外1000里/組，剩餘額度算國內500里/組，上限4000)
         const activityAMiles = computed(() => {
           const rawOverseasMiles = overseasSteps.value * 1000;
           const actualOverseas = Math.min(4000, rawOverseasMiles);
@@ -691,47 +782,44 @@
           return actualOverseas + actualDomestic;
         });
 
-        // 好禮二星巴克解鎖資格
         const starbucksQualified = computed(() => {
           return domesticValidTotal.value >= 30000 || overseasValidTotal.value >= 30000;
         });
 
-        // 活動B：8月生日月加速器消費額與加碼哩程 (加碼額外1倍，上限5,000里)
         const augustAcceleratorTotal = computed(() => {
           return transactions.value
-            .filter(tx => tx.isValidPayment && isAugust(tx.date) && tx.isAccelerator)
+            .filter(tx => tx.isValidPayment && (isAugust(tx.date) || isAugust(getPostedDate(tx))) && tx.isAccelerator)
             .reduce((sum, tx) => sum + tx.amount, 0);
         });
 
         const activityBMiles = computed(() => {
-          // 生日加碼額外1倍等於加速器基礎里數
           const totalAugMiles = transactions.value
-            .filter(tx => tx.isValidPayment && isAugust(tx.date) && tx.isAccelerator)
-            .reduce((sum, tx) => sum + calcBaseMiles(tx), 0);
+            .filter(tx => tx.isValidPayment && (isAugust(tx.date) || isAugust(getPostedDate(tx))) && tx.isAccelerator)
+            .reduce((sum, tx) => sum + Math.floor(tx.amount / 10), 0);
           return Math.min(5000, totalAugMiles);
         });
 
-        // 總累積預估哩程
         const totalMiles = computed(() => {
           return baseMilesTotal.value + activityAMiles.value + activityBMiles.value;
         });
 
-        // 記帳頁面篩選
         const filteredTransactions = computed(() => {
           return transactions.value.filter(tx => {
-            if (filter.value === 'august') return isAugust(tx.date);
+            const pDate = getPostedDate(tx);
+            if (filter.value === 'august') return isAugust(tx.date) || isAugust(pDate);
             if (filter.value === 'actA') return tx.isValidPayment;
             if (filter.value === 'invalid') return !tx.isValidPayment;
             return true;
           });
         });
 
-        // Modal 操作
         const openAddModal = () => {
           isEditing.value = false;
+          const today = new Date().toISOString().split('T')[0];
           form.value = {
             id: Date.now(),
-            date: new Date().toISOString().split('T')[0],
+            date: today,
+            postedDate: today,
             merchant: '',
             amount: null,
             isOverseas: false,
@@ -743,17 +831,16 @@
 
         const editTx = (tx) => {
           isEditing.value = true;
-          form.value = { ...tx };
+          form.value = { ...tx, postedDate: tx.postedDate || tx.date };
           showModal.value = true;
         };
 
-        const closeModal = () => {
-          showModal.value = false;
-        };
+        const closeModal = () => showModal.value = false;
 
         const saveTx = () => {
           const isValid = isPaymentValid(form.value.paymentMethod);
-          const item = { ...form.value, isValidPayment: isValid };
+          const pDate = form.value.postedDate || form.value.date;
+          const item = { ...form.value, postedDate: pDate, isValidPayment: isValid };
 
           if (isEditing.value) {
             const index = transactions.value.findIndex(t => t.id === item.id);
@@ -789,6 +876,7 @@
           form,
           transactions,
           filteredTransactions,
+          acceleratorTotal,
           baseMilesTotal,
           overseasValidTotal,
           overseasSteps,
@@ -802,6 +890,7 @@
           isPaymentValid,
           getPaymentLabel,
           isAugust,
+          getPostedDate,
           calcBaseMiles,
           openAddModal,
           editTx,
